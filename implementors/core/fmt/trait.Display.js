@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["fastmap"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.54.0/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"enum\" href=\"fastmap/error/enum.Error.html\" title=\"enum fastmap::error::Error\">Error</a>","synthetic":false,"types":["fastmap::error::Error"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
