@@ -164,21 +164,19 @@ fn blocksize(c: &mut criterion::Criterion) {
         .build_global()
         .unwrap();
 
-    for power2 in 10..20 {
+    for power2 in 10..30 {
         g.bench_with_input(
             criterion::BenchmarkId::new("in_place_fastx", 2_u64.pow(power2)),
             &2_u64.pow(power2),
             |b, &length| b.iter(|| criterion::black_box(in_place_fastx_kmer_count(&file, length))),
         );
-        /* Multithreading isn't efficient on kmer counting
         g.bench_with_input(
-                criterion::BenchmarkId::new("in_place_fastx_parallel", 2_u64.pow(power2)),
-                &2_u64.pow(power2),
-                |b, &length| {
-                    b.iter(|| criterion::black_box(in_place_fastx_kmer_count_parallel(&file, length)))
-                },
-            );
-         */
+            criterion::BenchmarkId::new("in_place_fastx_parallel", 2_u64.pow(power2)),
+            &2_u64.pow(power2),
+            |b, &length| {
+                b.iter(|| criterion::black_box(in_place_fastx_kmer_count_parallel(&file, length)))
+            },
+        );
         g.bench_with_input(
             criterion::BenchmarkId::new("bio", 2_u64.pow(power2)),
             &2_u64.pow(power2),
