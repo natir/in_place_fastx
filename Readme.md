@@ -12,3 +12,7 @@ A fastq parser based on memory mapping.
 **WARNING**:
 - FastMap is tested only on Linux
 - FastMap is still in developpement many thing can change or be break
+
+## Minimum supported Rust version
+
+Currently the minimum supported Rust version is 1.54.0.
