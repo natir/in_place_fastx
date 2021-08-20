@@ -6,7 +6,7 @@ pub type Block = memmap::Mmap;
 
 pub struct Producer {
     offset: u64,
-    block_length: u64,
+    blocksize: u64,
     file: std::fs::File,
     file_length: u64,
 }
@@ -16,10 +16,10 @@ impl Producer {
     where
         P: AsRef<std::path::Path>,
     {
-        Producer::with_blocksize(8092, path)
+        Producer::with_blocksize(8192, path)
     }
 
-    pub fn with_blocksize<P>(mut block_length: u64, path: P) -> Result<Self, error::Error>
+    pub fn with_blocksize<P>(mut blocksize: u64, path: P) -> Result<Self, error::Error>
     where
         P: AsRef<std::path::Path>,
     {
@@ -29,20 +29,21 @@ impl Producer {
             .map_err(|source| error::Error::MetaDataFile { source })?
             .len();
 
-        block_length = file_length.min(block_length);
+        blocksize = file_length.min(blocksize);
 
         Ok(Producer {
             offset: 0,
-            block_length,
+            blocksize,
             file_length,
             file: std::fs::File::open(path).map_err(|source| error::Error::OpenFile { source })?,
         })
     }
 
     pub fn next_block(&mut self) -> error::Result<Option<Block>> {
+        log::debug!("next block");
         if self.offset == self.file_length {
             Ok(None)
-        } else if self.offset + self.block_length >= self.file_length {
+        } else if self.offset + self.blocksize >= self.file_length {
             let block = unsafe {
                 memmap::MmapOptions::new()
                     .offset(self.offset)
@@ -58,19 +59,19 @@ impl Producer {
             let tmp = unsafe {
                 memmap::MmapOptions::new()
                     .offset(self.offset)
-                    .len(self.block_length as usize)
+                    .len(self.blocksize as usize)
                     .map(&self.file)
                     .map_err(|source| error::Error::MapFile { source })?
             };
 
             let old_offset = self.offset;
-            let block_length = Producer::correct_block_size(&tmp)?;
-            self.offset += block_length;
+            let blocksize = Producer::correct_block_size(&tmp)?;
+            self.offset += blocksize;
 
             Ok(Some(unsafe {
                 memmap::MmapOptions::new()
                     .offset(old_offset)
-                    .len(block_length as usize)
+                    .len(blocksize as usize)
                     .map(&self.file)
                     .map_err(|source| error::Error::MapFile { source })?
             }))
@@ -78,18 +79,49 @@ impl Producer {
     }
 
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
-        let mut end = block.len();
+        log::trace!(
+            "CORRECT BLOCK {}",
+            String::from_utf8(block.to_vec()).unwrap()
+        );
 
-        for _ in 0..4 {
+        let mut end = block.len();
+        let mut seen_plus = false;
+
+        for _ in 0..8 {
             end = block[..end]
                 .rfind_byte(b'\n')
                 .ok_or(error::Error::NoNewLineInBlock)?;
-            if end + 1 < block.len() && block[end + 1] == b'@' {
-                return Ok((end + 1) as u64);
+
+            if end + 1 < block.len() {
+                seen_plus = if !seen_plus {
+                    block[end + 1] == b'+'
+                } else {
+                    seen_plus
+                };
+
+                if seen_plus && block[end + 1] == b'@' {
+                    log::trace!(
+                        "CORRECT BLOCK {}",
+                        String::from_utf8(block[..end + 1].to_vec()).unwrap()
+                    );
+                    return Ok((end + 1) as u64);
+                }
             }
         }
 
         Err(error::Error::NotAFastqFile)
+    }
+}
+
+impl Iterator for Producer {
+    type Item = error::Result<Block>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.next_block() {
+            Ok(Some(block)) => Some(Ok(block)),
+            Ok(None) => None,
+            Err(e) => Some(Err(e)),
+        }
     }
 }
 
@@ -104,6 +136,11 @@ impl Reader {
     }
 
     fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
+        log::trace!(
+            "BLOCK {}",
+            String::from_utf8(self.block[self.offset..].to_vec()).unwrap()
+        );
+
         let next = self.block[self.offset..]
             .find_byte(b'\n')
             .ok_or(error::Error::PartialRecord)?;
@@ -112,20 +149,25 @@ impl Reader {
         Ok(range)
     }
 
-    pub fn next(&mut self) -> error::Result<Option<super::Record<'_>>> {
+    pub fn next_record(&mut self) -> error::Result<Option<super::Record<'_>>> {
+        log::debug!("next record");
         if self.offset == self.block.len() {
             Ok(None)
         } else {
             let comment = &self.block[self.get_line()?];
+            log::trace!("COMMENT {}", String::from_utf8(comment.to_vec()).unwrap());
             self.offset += comment.len() + 1;
 
             let seq = &self.block[self.get_line()?];
+            log::trace!("SEQ {}", String::from_utf8(seq.to_vec()).unwrap());
             self.offset += seq.len() + 1;
 
             let plus = &self.block[self.get_line()?];
+            log::trace!("PLUS {}", String::from_utf8(plus.to_vec()).unwrap());
             self.offset += plus.len() + 1;
 
             let qual = &self.block[self.get_line()?];
+            log::trace!("QUAL {}", String::from_utf8(qual.to_vec()).unwrap());
             self.offset += qual.len() + 1;
 
             Ok(Some((comment, seq, plus, qual)))
@@ -215,10 +257,9 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
             assert_eq!(
                 block_length,
                 vec![
-                    8040, 8060, 8060, 8068, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    6552
+                    8040, 8060, 8060, 8068, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112,
+                    8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112,
+                    8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 3744
                 ]
             );
         }
@@ -279,7 +320,7 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
             while let Ok(Some(block)) = producer.next_block() {
                 let mut reader = Reader::new(block);
 
-                while let Ok(Some(record)) = reader.next() {
+                while let Ok(Some(record)) = reader.next_record() {
                     comments.push(String::from_utf8(record.0.to_vec()).unwrap());
                     seqs.push(String::from_utf8(record.1.to_vec()).unwrap());
                     pluss.push(String::from_utf8(record.2.to_vec()).unwrap());

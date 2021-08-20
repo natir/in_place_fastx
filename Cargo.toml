@@ -3,19 +3,54 @@ name = "fastmap"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A fastq parser based on mmap allow multithreading of parsing"
+
+homepage = "https://github.com/natir/fastmap"
+repository = "https://github.com/natir/fastmap"
+documentation = "https://natir.github.io/fastmap/fastmap"
+
+readme = "Readme.md"
+license-file = "LICENSE"
+
+keywords = ["bioinformatics", "parser"]
+
+publish = false # this crate haven't his place in crates.io
+
 
 [dependencies]
-memmap    = "0.7"
-rayon     = "1"
-bstr      = "0.2"
+memmap     = "0.7"
+rayon      = "1"
+bstr       = "0.2"
 
-log          = "0.4"
-env_logger   = "0.9"
-thiserror    = "1"
+log        = "0.4"
+env_logger = "0.9"
+thiserror  = "1"
+
 
 [dev-dependencies]
-test-env-log = "0.2"
+tempfile   = "3"
+rand       = "0.8"
 
-tempfile = "3"
-rand = "0.8"
+# bench dependencie
+criterion  = "0.3"
+cocktail   = { git = "https://github.com/natir/cocktail.git" }
+bio        = "0.37"
+needletail = "0.4"
+
+
+[profile.release]
+debug = true # uncomment for profiling
+lto = 'thin'
+opt-level = 3
+overflow-checks = false
+panic = 'abort'
+incremental = false
+
+
+[[bench]]
+name = "kmer_count"
+harness = false
+
+
+[[example]]
+name = "kmer_count"

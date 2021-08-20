@@ -1,44 +1,92 @@
+use rayon::iter::ParallelIterator;
+
+use rayon::iter::ParallelBridge;
+
 pub mod block;
 
 pub type Record<'a> = (&'a [u8], &'a [u8], &'a [u8], &'a [u8]);
 
 use crate::error;
 
-pub struct Parser {
-    block_producer: block::Producer,
-}
-
 pub type RecordWorker<T> = fn(Record, &mut T) -> error::Result<()>;
 pub type BlockWorker<T> = fn(block::Block, &mut T) -> error::Result<()>;
 
-impl Parser {
-    pub fn new<P>(path: P) -> error::Result<Self>
+pub trait Parser {
+    fn file<P>(&mut self, path: P) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,
     {
-        Ok(Parser {
-            block_producer: block::Producer::new(path)?,
-        })
+        self.file_with_blocksize(8192, path)
     }
 
-    pub fn by_record<T>(&mut self, worker: RecordWorker<T>, data: &mut T) -> error::Result<()> {
-        while let Some(current_block) = self.block_producer.next_block()? {
-            let mut reader = block::Reader::new(current_block);
+    fn file_with_blocksize<P>(&mut self, blocksize: u64, path: P) -> error::Result<()>
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let mut producer = block::Producer::with_blocksize(blocksize, path)?;
 
-            while let Some(record) = reader.next()? {
-                worker(record, data)?;
-            }
+        while let Some(block) = producer.next_block()? {
+            self.block(block)?
         }
 
         Ok(())
     }
 
-    pub fn by_block<T>(&mut self, worker: BlockWorker<T>, data: &mut T) -> error::Result<()> {
-        while let Some(current_block) = self.block_producer.next_block()? {
-            worker(current_block, data)?;
+    fn block(&mut self, block: block::Block) -> error::Result<()> {
+        let mut reader = block::Reader::new(block);
+
+        while let Some(record) = reader.next_record()? {
+            self.record(record)
         }
 
         Ok(())
+    }
+
+    fn record(&mut self, _record: Record) {}
+
+    fn multithread_by_block<P, T>(
+        &self,
+        path: P,
+        data: &T,
+        worker: fn(Record, &T),
+    ) -> error::Result<()>
+    where
+        P: AsRef<std::path::Path>,
+        T: std::marker::Send + std::marker::Sync,
+    {
+        self.multithread_by_block_with_blocksize(8092, path, data, worker)
+    }
+
+    fn multithread_by_block_with_blocksize<P, T>(
+        &self,
+        blocksize: u64,
+        path: P,
+        data: &T,
+        worker: fn(Record, &T),
+    ) -> error::Result<()>
+    where
+        P: AsRef<std::path::Path>,
+        T: std::marker::Send + std::marker::Sync,
+    {
+        let producer = block::Producer::with_blocksize(blocksize, path)?;
+
+        match producer
+            .par_bridge()
+            .map(|block| match block {
+                Ok(block) => {
+                    let mut reader = block::Reader::new(block);
+                    while let Some(record) = reader.next_record()? {
+                        worker(record, data);
+                    }
+                    Ok(())
+                }
+                Err(e) => Err(e),
+            })
+            .find_any(|x| x.is_err())
+        {
+            Some(e) => e,
+            None => Ok(()),
+        }
     }
 }
 
@@ -75,37 +123,115 @@ mod tests {
 
     #[test]
     fn record_counter() {
-        fn counter(_: Record, count: &mut u64) -> error::Result<()> {
-            *count += 1;
-
-            Ok(())
+        struct Counter {
+            pub count: u64,
         }
 
-        let mut count = 0;
-        let mut parser = Parser::new(generate_fastq(42, 1_000, 150)).unwrap();
+        impl Parser for Counter {
+            fn record(&mut self, _record: Record) {
+                self.count += 1;
+            }
+        }
 
-        parser.by_record(counter, &mut count).unwrap();
+        let mut parser = Counter { count: 0 };
+        parser.file(generate_fastq(42, 1_000, 150)).unwrap();
 
-        assert_eq!(1_000, count);
+        assert_eq!(1_000, parser.count);
     }
 
     #[test]
-    fn record_counter_block() {
-        fn counter(block: block::Block, count: &mut u64) -> error::Result<()> {
-            let mut reader = block::Reader::new(block);
-
-            while reader.next()?.is_some() {
-                *count += 1;
-            }
-
-            Ok(())
+    fn record_counter_parallel() {
+        struct Counter {
+            pub count: std::sync::atomic::AtomicU64,
         }
 
-        let mut count = 0;
-        let mut parser = Parser::new(generate_fastq(42, 1_000, 150)).unwrap();
+        fn worker(_record: Record, data: &std::sync::atomic::AtomicU64) {
+            data.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
 
-        parser.by_block(counter, &mut count).unwrap();
+        impl Parser for Counter {}
 
-        assert_eq!(1_000, count);
+        let parser = Counter {
+            count: std::sync::atomic::AtomicU64::new(0),
+        };
+
+        parser
+            .multithread_by_block(generate_fastq(42, 1_000, 150), &parser.count, worker)
+            .unwrap();
+
+        assert_eq!(1_000, parser.count.into_inner());
+    }
+
+    type BaseCount<T> = [T; 4];
+    trait AbsBaseCount {
+        fn new() -> Self;
+    }
+
+    impl AbsBaseCount for BaseCount<u64> {
+        fn new() -> Self {
+            [0, 0, 0, 0]
+        }
+    }
+
+    impl AbsBaseCount for BaseCount<std::sync::atomic::AtomicU64> {
+        fn new() -> Self {
+            [
+                std::sync::atomic::AtomicU64::new(0),
+                std::sync::atomic::AtomicU64::new(0),
+                std::sync::atomic::AtomicU64::new(0),
+                std::sync::atomic::AtomicU64::new(0),
+            ]
+        }
+    }
+
+    #[test]
+    fn base_count() {
+        struct Counter {
+            pub bases: BaseCount<u64>,
+        }
+
+        impl Parser for Counter {
+            fn record(&mut self, record: Record) {
+                for nuc in record.1 {
+                    self.bases[(nuc >> 1 & 0b11) as usize] += 1;
+                }
+            }
+        }
+
+        let mut parser = Counter {
+            bases: BaseCount::new(),
+        };
+        parser.file(generate_fastq(42, 1_000, 150)).unwrap();
+
+        assert_eq!([37301, 37496, 37624, 37579], parser.bases);
+    }
+
+    #[test]
+    fn base_count_parallel() {
+        struct Counter {
+            pub bases: BaseCount<std::sync::atomic::AtomicU64>,
+        }
+
+        fn worker(record: Record, data: &BaseCount<std::sync::atomic::AtomicU64>) {
+            for nuc in record.1 {
+                data[(nuc >> 1 & 0b11) as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
+
+        impl Parser for Counter {}
+
+        let parser = Counter {
+            bases: BaseCount::new(),
+        };
+
+        parser
+            .multithread_by_block(generate_fastq(42, 1_000, 150), &parser.bases, worker)
+            .unwrap();
+
+        assert_eq!([37301, 37496, 37624, 37579], unsafe {
+            std::mem::transmute::<BaseCount<std::sync::atomic::AtomicU64>, BaseCount<u64>>(
+                parser.bases,
+            )
+        });
     }
 }
