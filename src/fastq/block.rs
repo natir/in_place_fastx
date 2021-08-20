@@ -215,12 +215,12 @@ mod tests {
 
             let block = tmp.next_block().unwrap().unwrap();
 
-            assert_eq!(block.len(), 8040);
+            assert_eq!(block.len(), 7730);
         }
 
         #[test]
         fn with_blocksize() {
-            let mut tmp = Producer::with_blocksize(309, generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp = Producer::with_blocksize(463, generate_fastq(42, 1_000, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -257,16 +257,17 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
             assert_eq!(
                 block_length,
                 vec![
-                    8040, 8060, 8060, 8068, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112,
-                    8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112,
-                    8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 8112, 3744
+                    7730, 7750, 7750, 7750, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
+                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
+                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
+                    7800
                 ]
             );
         }
 
         #[test]
         fn check_block() {
-            let mut tmp = Producer::with_blocksize(700, generate_fastq(42, 5, 150)).unwrap();
+            let mut tmp = Producer::with_blocksize(800, generate_fastq(42, 5, 150)).unwrap();
 
             assert_eq!(
                 String::from_utf8(tmp.next_block().unwrap().unwrap().as_ref().to_vec()),
