@@ -1,4 +1,4 @@
-use fastmap::fastq::Parser as fastmapParser;
+use in_place_fastx::fastq::Parser as in_place_fastxParser;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -18,12 +18,15 @@ struct ParserParallel {
     pub counter: std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 }
 
-impl fastmap::fastq::Parser for ParserParallel {}
+impl in_place_fastx::fastq::Parser for ParserParallel {}
 
 fn worker(
-    record: fastmap::fastq::Record,
+    record: in_place_fastx::fastq::Record,
     data: &std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 ) {
+    if record.1.len() < K as usize{
+	return
+    }
     for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
         data.get(&kmer)
             .unwrap()
@@ -31,7 +34,7 @@ fn worker(
     }
 }
 
-fn main() -> fastmap::error::Result<()> {
+fn main() -> in_place_fastx::error::Result<()> {
     let mut parser = ParserParallel {
         counter: std::collections::HashMap::new(),
     };
@@ -45,7 +48,7 @@ fn main() -> fastmap::error::Result<()> {
     let mut args = std::env::args();
     let _ = args.next();
     for input in args {
-        parser.multithread_by_block_with_blocksize(131072, input, &parser.counter, worker)?;
+        parser.multithread_by_block_with_blocksize(1048576, input, &parser.counter, worker)?;
     }
 
     for (kmer, count) in parser.counter.iter() {

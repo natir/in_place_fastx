@@ -1,4 +1,4 @@
-use fastmap::fastq::Parser as fastmapParser;
+use in_place_fastx::fastq::Parser as in_place_fastxParser;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -18,15 +18,18 @@ struct Parser {
     pub counter: std::collections::HashMap<u64, u64>,
 }
 
-impl fastmap::fastq::Parser for Parser {
-    fn record(&mut self, record: fastmap::fastq::Record) {
+impl in_place_fastx::fastq::Parser for Parser {
+    fn record(&mut self, record: in_place_fastx::fastq::Record) {
+	if record.1.len() < K as usize{
+	    return
+	}
         for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
             (*self.counter.get_mut(&kmer).unwrap()) += 1;
         }
     }
 }
 
-fn main() -> fastmap::error::Result<()> {
+fn main() -> in_place_fastx::error::Result<()> {
     let mut parser = Parser {
         counter: std::collections::HashMap::new(),
     };
@@ -38,7 +41,7 @@ fn main() -> fastmap::error::Result<()> {
     let mut args = std::env::args();
     let _ = args.next();
     for input in args {
-        parser.file_with_blocksize(131072, input)?;
+        parser.file_with_blocksize(1048576, input)?;
     }
 
     for (kmer, count) in parser.counter.iter() {

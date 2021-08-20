@@ -7,7 +7,7 @@ use rand::Rng;
 use rand::SeedableRng;
 
 /* project use */
-use fastmap::fastq::Parser as fastmapParser;
+use in_place_fastx::fastq::Parser as in_place_fastxParser;
 
 /* util function */
 fn generate_fastq(seed: u64, nb_seq: usize, length: usize) -> tempfile::NamedTempFile {
@@ -58,15 +58,15 @@ struct Parser {
     pub counter: Counter<u64, KMER_SPACE>,
 }
 
-impl fastmap::fastq::Parser for Parser {
-    fn record(&mut self, record: fastmap::fastq::Record) {
+impl in_place_fastx::fastq::Parser for Parser {
+    fn record(&mut self, record: in_place_fastx::fastq::Record) {
         for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
             self.counter[kmer as usize] += 1;
         }
     }
 }
 
-fn fastmap_kmer_count<P>(path: P, block_length: u64) -> Counter<u64, KMER_SPACE>
+fn in_place_fastx_kmer_count<P>(path: P, block_length: u64) -> Counter<u64, KMER_SPACE>
 where
     P: AsRef<std::path::Path>,
 {
@@ -83,10 +83,10 @@ struct ParserParallel {
     pub counter: Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 }
 
-impl fastmap::fastq::Parser for ParserParallel {}
+impl in_place_fastx::fastq::Parser for ParserParallel {}
 
 fn worker(
-    record: fastmap::fastq::Record,
+    record: in_place_fastx::fastq::Record,
     data: &Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 ) {
     for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
@@ -94,7 +94,7 @@ fn worker(
     }
 }
 
-fn fastmap_kmer_count_parallel<P>(
+fn in_place_fastx_kmer_count_parallel<P>(
     path: P,
     block_length: u64,
 ) -> Counter<std::sync::atomic::AtomicU64, KMER_SPACE>
@@ -166,16 +166,16 @@ fn blocksize(c: &mut criterion::Criterion) {
 
     for power2 in 10..20 {
         g.bench_with_input(
-            criterion::BenchmarkId::new("fastmap", 2_u64.pow(power2)),
+            criterion::BenchmarkId::new("in_place_fastx", 2_u64.pow(power2)),
             &2_u64.pow(power2),
-            |b, &length| b.iter(|| criterion::black_box(fastmap_kmer_count(&file, length))),
+            |b, &length| b.iter(|| criterion::black_box(in_place_fastx_kmer_count(&file, length))),
         );
         /* Multithreading isn't efficient on kmer counting
         g.bench_with_input(
-                criterion::BenchmarkId::new("fastmap_parallel", 2_u64.pow(power2)),
+                criterion::BenchmarkId::new("in_place_fastx_parallel", 2_u64.pow(power2)),
                 &2_u64.pow(power2),
                 |b, &length| {
-                    b.iter(|| criterion::black_box(fastmap_kmer_count_parallel(&file, length)))
+                    b.iter(|| criterion::black_box(in_place_fastx_kmer_count_parallel(&file, length)))
                 },
             );
          */

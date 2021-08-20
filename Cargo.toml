@@ -1,18 +1,18 @@
 [package]
-name = "fastmap"
+name = "in_place_fastx"
 version = "0.1.0"
 edition = "2018"
 
-description = "A fastq parser based on mmap allow multithreading of parsing"
+description = "A fastx parser based on memory mapping, allow multithreading"
 
-homepage = "https://github.com/natir/fastmap"
-repository = "https://github.com/natir/fastmap"
-documentation = "https://natir.github.io/fastmap/fastmap"
+homepage = "https://github.com/natir/in_place_fastx"
+repository = "https://github.com/natir/in_place_fastx"
+documentation = "https://natir.github.io/in_place_fastx/in_place_fastx"
 
 readme = "Readme.md"
 license-file = "LICENSE"
 
-keywords = ["bioinformatics", "parser"]
+keywords = ["bioinformatics", "parser", "fasta", "fastq"]
 
 publish = false # this crate haven't his place in crates.io
 
