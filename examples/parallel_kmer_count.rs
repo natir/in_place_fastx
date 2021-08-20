@@ -24,8 +24,8 @@ fn worker(
     record: in_place_fastx::fastq::Record,
     data: &std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 ) {
-    if record.1.len() < K as usize{
-	return
+    if record.1.len() < K as usize {
+        return;
     }
     for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
         data.get(&kmer)
