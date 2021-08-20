@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["fastmap"];
+window.ALL_CRATES = ["in_place_fastx"];
