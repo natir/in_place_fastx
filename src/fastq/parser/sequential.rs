@@ -4,11 +4,9 @@ use crate::fastq;
 
 /// Trait allow sequential parsing of fastq
 ///
-/// Blank implementation, do nothing you should reimplement record.
-///
-/// Reading is perform by block (by default of 8192 bytes). Parser get a block, this block is resize to remove incomplete record
+/// Reading is perform by block. Parser map a block of file in memory, this block is resize to remove incomplete record.
+/// For each block record position is extract and `record` function is call on it.
 pub trait Sequential {
-    /// Open a file and run record function on each function blocksize is 8192
     fn parse<P>(&mut self, path: P) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,

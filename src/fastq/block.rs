@@ -40,7 +40,6 @@ impl Producer {
     }
 
     pub fn next_block(&mut self) -> error::Result<Option<super::Block>> {
-        log::debug!("next block");
         if self.offset == self.file_length {
             Ok(None)
         } else if self.offset + self.blocksize >= self.file_length {
@@ -72,11 +71,6 @@ impl Producer {
     }
 
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
-        log::trace!(
-            "CORRECT BLOCK {}",
-            String::from_utf8(block.to_vec()).unwrap()
-        );
-
         let mut end = block.len();
         let mut seen_plus = false;
 
@@ -93,10 +87,6 @@ impl Producer {
                 };
 
                 if seen_plus && block[end + 1] == b'@' {
-                    log::trace!(
-                        "CORRECT BLOCK {}",
-                        String::from_utf8(block[..end + 1].to_vec()).unwrap()
-                    );
                     return Ok((end + 1) as u64);
                 }
             }
@@ -129,11 +119,6 @@ impl Reader {
     }
 
     fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
-        log::trace!(
-            "BLOCK {}",
-            String::from_utf8(self.block.data()[self.offset..].to_vec()).unwrap()
-        );
-
         let next = self.block.data()[self.offset..]
             .find_byte(b'\n')
             .ok_or(error::Error::PartialRecord)?;
@@ -143,24 +128,19 @@ impl Reader {
     }
 
     pub fn next_record(&mut self) -> error::Result<Option<super::Record<'_>>> {
-        log::debug!("next record");
         if self.offset == self.block.len() {
             Ok(None)
         } else {
             let comment = &self.block.data()[self.get_line()?];
-            log::trace!("COMMENT {}", String::from_utf8(comment.to_vec()).unwrap());
             self.offset += comment.len() + 1;
 
             let sequence = &self.block.data()[self.get_line()?];
-            log::trace!("SEQ {}", String::from_utf8(sequence.to_vec()).unwrap());
             self.offset += sequence.len() + 1;
 
             let plus = &self.block.data()[self.get_line()?];
-            log::trace!("PLUS {}", String::from_utf8(plus.to_vec()).unwrap());
             self.offset += plus.len() + 1;
 
             let quality = &self.block.data()[self.get_line()?];
-            log::trace!("QUAL {}", String::from_utf8(quality.to_vec()).unwrap());
             self.offset += quality.len() + 1;
 
             Ok(Some(super::Record {

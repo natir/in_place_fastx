@@ -63,6 +63,7 @@ struct Parser {
 }
 
 impl in_place_fastx::fastq::parser::Sequential for Parser {
+    #[cfg(not(tarpaulin_include))]
     fn record(&mut self, record: in_place_fastx::fastq::Record) {
         for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
             self.counter[kmer as usize] += 1;

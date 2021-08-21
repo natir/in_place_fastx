@@ -73,6 +73,8 @@ mod tests {
             pub bases: crate::fastq::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
         }
 
+        impl SharedState for Counter {}
+
         fn worker(
             record: crate::fastq::Record,
             data: &crate::fastq::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
@@ -81,8 +83,6 @@ mod tests {
                 data[(nuc >> 1 & 0b11) as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             }
         }
-
-        impl SharedState for Counter {}
 
         let parser = Counter {
             bases: crate::fastq::parser::tests::BaseCount::new(),
