@@ -7,9 +7,10 @@ use rand::Rng;
 use rand::SeedableRng;
 
 /* project use */
-use in_place_fastx::fastq::Parser as in_place_fastxParser;
+use in_place_fastx::fastq::parser::Sequential;
+use in_place_fastx::fastq::parser::SharedState;
 
-/* util function */
+/* utils function */
 fn generate_fastq(seed: u64, nb_seq: usize, length: usize) -> tempfile::NamedTempFile {
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
@@ -38,12 +39,14 @@ trait AbsCounter {
     fn new() -> Self;
 }
 
+#[cfg(not(tarpaulin_include))]
 impl<const N: usize> AbsCounter for Counter<u64, N> {
     fn new() -> Self {
         [0; N]
     }
 }
 
+#[cfg(not(tarpaulin_include))]
 impl AbsCounter for Counter<std::sync::atomic::AtomicU64, 1024> {
     fn new() -> Self {
         unsafe { std::mem::transmute([0_u64; 1024]) }
@@ -54,13 +57,14 @@ const K: u32 = 5;
 const KMER_SPACE: usize = 2_usize.pow(K * 2);
 
 /* FastMap parser definition */
+#[cfg(not(tarpaulin_include))]
 struct Parser {
     pub counter: Counter<u64, KMER_SPACE>,
 }
 
-impl in_place_fastx::fastq::Parser for Parser {
+impl in_place_fastx::fastq::parser::Sequential for Parser {
     fn record(&mut self, record: in_place_fastx::fastq::Record) {
-        for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
+        for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
             self.counter[kmer as usize] += 1;
         }
     }
@@ -73,7 +77,7 @@ where
     let mut parser = Parser {
         counter: Counter::new(),
     };
-    parser.file_with_blocksize(block_length, path).unwrap();
+    parser.with_blocksize(block_length, path).unwrap();
 
     parser.counter
 }
@@ -83,13 +87,13 @@ struct ParserParallel {
     pub counter: Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 }
 
-impl in_place_fastx::fastq::Parser for ParserParallel {}
+impl in_place_fastx::fastq::parser::SharedState for ParserParallel {}
 
 fn worker(
     record: in_place_fastx::fastq::Record,
     data: &Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 ) {
-    for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
+    for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
         data[kmer as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     }
 }
@@ -106,7 +110,7 @@ where
     };
 
     parser
-        .multithread_by_block_with_blocksize(block_length, path, &parser.counter, worker)
+        .with_blocksize(block_length, path, &parser.counter, worker)
         .unwrap();
 
     parser.counter

@@ -1,4 +1,4 @@
-use in_place_fastx::fastq::Parser as in_place_fastxParser;
+use in_place_fastx::fastq::parser::SharedState;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -14,11 +14,11 @@ impl AbsCounter for Counter<std::sync::atomic::AtomicU64, 1024> {
 const K: u32 = 5;
 const KMER_SPACE: usize = 2_usize.pow(K * 2);
 
-struct ParserParallel {
+struct Parser {
     pub counter: std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 }
 
-impl in_place_fastx::fastq::Parser for ParserParallel {}
+impl SharedState for Parser {}
 
 fn worker(
     record: in_place_fastx::fastq::Record,
@@ -35,7 +35,7 @@ fn worker(
 }
 
 fn main() -> in_place_fastx::error::Result<()> {
-    let mut parser = ParserParallel {
+    let mut parser = Parser {
         counter: std::collections::HashMap::new(),
     };
 
@@ -48,7 +48,7 @@ fn main() -> in_place_fastx::error::Result<()> {
     let mut args = std::env::args();
     let _ = args.next();
     for input in args {
-        parser.multithread_by_block_with_blocksize(1048576, input, &parser.counter, worker)?;
+        parser.with_blocksize(1048576, input, &parser.counter, worker)?;
     }
 
     for (kmer, count) in parser.counter.iter() {

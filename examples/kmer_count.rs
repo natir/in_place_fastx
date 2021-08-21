@@ -1,4 +1,4 @@
-use in_place_fastx::fastq::Parser as in_place_fastxParser;
+use in_place_fastx::fastq::parser::Sequential;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -18,7 +18,7 @@ struct Parser {
     pub counter: std::collections::HashMap<u64, u64>,
 }
 
-impl in_place_fastx::fastq::Parser for Parser {
+impl Sequential for Parser {
     fn record(&mut self, record: in_place_fastx::fastq::Record) {
         if record.sequence.len() < K as usize {
             return;
@@ -41,7 +41,7 @@ fn main() -> in_place_fastx::error::Result<()> {
     let mut args = std::env::args();
     let _ = args.next();
     for input in args {
-        parser.file_with_blocksize(1048576, input)?;
+        parser.with_blocksize(1048576, input)?;
     }
 
     for (kmer, count) in parser.counter.iter() {
