@@ -171,7 +171,9 @@ mod tests {
 
         #[test]
         fn with_blocksize() {
-            let mut tmp = Producer::with_blocksize(463, crate::tests::generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp =
+                Producer::with_blocksize(463, crate::tests::generate_fastq(42, 1_000, 150))
+                    .unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -189,7 +191,8 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         #[test]
         fn with_blocksize_buffer_larger_file() {
-            let mut tmp = Producer::with_blocksize(8092, crate::tests::generate_fastq(44, 2, 150)).unwrap();
+            let mut tmp =
+                Producer::with_blocksize(8092, crate::tests::generate_fastq(44, 2, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -218,7 +221,8 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         #[test]
         fn check_block() {
-            let mut tmp = Producer::with_blocksize(800, crate::tests::generate_fastq(42, 5, 150)).unwrap();
+            let mut tmp =
+                Producer::with_blocksize(800, crate::tests::generate_fastq(42, 5, 150)).unwrap();
 
             assert_eq!(
                 String::from_utf8(tmp.next_block().unwrap().unwrap().data().to_vec()),
@@ -262,7 +266,8 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
 
         #[test]
         fn iterate_over_seq() {
-            let mut producer = Producer::with_blocksize(500, crate::tests::generate_fastq(42, 5, 150)).unwrap();
+            let mut producer =
+                Producer::with_blocksize(500, crate::tests::generate_fastq(42, 5, 150)).unwrap();
 
             let mut comments = Vec::new();
             let mut seqs = Vec::new();

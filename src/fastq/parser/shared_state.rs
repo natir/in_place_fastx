@@ -30,15 +30,12 @@ pub trait SharedState {
 
         match producer
             .par_bridge()
-            .map(|block| match block {
-                Ok(block) => {
-                    let mut reader = fastq::block::Reader::new(block);
-                    while let Some(record) = reader.next_record()? {
-                        worker(record, data);
-                    }
-                    Ok(())
+            .map(|block| {
+                let mut reader = fastq::block::Reader::new(block?);
+                while let Some(record) = reader.next_record()? {
+                    worker(record, data);
                 }
-                Err(e) => Err(e),
+                Ok(())
             })
             .find_any(|x| x.is_err())
         {
@@ -65,6 +62,26 @@ mod tests {
                 std::sync::atomic::AtomicU64::new(0),
             ]
         }
+    }
+
+    #[test]
+    fn record_count() {
+        struct Counter {}
+
+        impl SharedState for Counter {}
+
+        fn worker(_record: crate::fastq::Record, data: &std::sync::atomic::AtomicU64) {
+            data.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        }
+
+        let parser = Counter {};
+        let data = std::sync::atomic::AtomicU64::new(0);
+
+        parser
+            .parse(crate::tests::generate_fastq(42, 1_000, 150), &data, worker)
+            .unwrap();
+
+        assert_eq!(1000, data.into_inner());
     }
 
     #[test]
