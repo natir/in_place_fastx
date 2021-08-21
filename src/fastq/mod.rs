@@ -1,15 +1,21 @@
 use rayon::iter::ParallelIterator;
-
 use rayon::iter::ParallelBridge;
-
-pub mod block;
-
-pub type Record<'a> = (&'a [u8], &'a [u8], &'a [u8], &'a [u8]);
 
 use crate::error;
 
-pub type RecordWorker<T> = fn(Record, &mut T) -> error::Result<()>;
-pub type BlockWorker<T> = fn(block::Block, &mut T) -> error::Result<()>;
+pub mod block;
+
+/* type declaratino*/
+/// Record store a fastq record in public field
+pub struct Record<'a> {
+    pub comment: &'a [u8],
+    pub sequence: &'a [u8],
+    pub plus: &'a [u8],
+    pub quality: &'a [u8],
+}
+
+pub type Block = memmap::Mmap;
+
 
 pub trait Parser {
     fn file<P>(&mut self, path: P) -> error::Result<()>
@@ -32,7 +38,7 @@ pub trait Parser {
         Ok(())
     }
 
-    fn block(&mut self, block: block::Block) -> error::Result<()> {
+    fn block(&mut self, block: Block) -> error::Result<()> {
         let mut reader = block::Reader::new(block);
 
         while let Some(record) = reader.next_record()? {
@@ -192,7 +198,7 @@ mod tests {
 
         impl Parser for Counter {
             fn record(&mut self, record: Record) {
-                for nuc in record.1 {
+                for nuc in record.sequence {
                     self.bases[(nuc >> 1 & 0b11) as usize] += 1;
                 }
             }
@@ -213,7 +219,7 @@ mod tests {
         }
 
         fn worker(record: Record, data: &BaseCount<std::sync::atomic::AtomicU64>) {
-            for nuc in record.1 {
+            for nuc in record.sequence {
                 data[(nuc >> 1 & 0b11) as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             }
         }

@@ -158,19 +158,24 @@ impl Reader {
             log::trace!("COMMENT {}", String::from_utf8(comment.to_vec()).unwrap());
             self.offset += comment.len() + 1;
 
-            let seq = &self.block[self.get_line()?];
-            log::trace!("SEQ {}", String::from_utf8(seq.to_vec()).unwrap());
-            self.offset += seq.len() + 1;
+            let sequence = &self.block[self.get_line()?];
+            log::trace!("SEQ {}", String::from_utf8(sequence.to_vec()).unwrap());
+            self.offset += sequence.len() + 1;
 
             let plus = &self.block[self.get_line()?];
             log::trace!("PLUS {}", String::from_utf8(plus.to_vec()).unwrap());
             self.offset += plus.len() + 1;
 
-            let qual = &self.block[self.get_line()?];
-            log::trace!("QUAL {}", String::from_utf8(qual.to_vec()).unwrap());
-            self.offset += qual.len() + 1;
+            let quality = &self.block[self.get_line()?];
+            log::trace!("QUAL {}", String::from_utf8(quality.to_vec()).unwrap());
+            self.offset += quality.len() + 1;
 
-            Ok(Some((comment, seq, plus, qual)))
+            Ok(Some(super::Record {
+                comment,
+                sequence,
+                plus,
+                quality,
+            }))
         }
     }
 }
@@ -322,10 +327,10 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
                 let mut reader = Reader::new(block);
 
                 while let Ok(Some(record)) = reader.next_record() {
-                    comments.push(String::from_utf8(record.0.to_vec()).unwrap());
-                    seqs.push(String::from_utf8(record.1.to_vec()).unwrap());
-                    pluss.push(String::from_utf8(record.2.to_vec()).unwrap());
-                    quals.push(String::from_utf8(record.3.to_vec()).unwrap());
+                    comments.push(String::from_utf8(record.comment.to_vec()).unwrap());
+                    seqs.push(String::from_utf8(record.sequence.to_vec()).unwrap());
+                    pluss.push(String::from_utf8(record.plus.to_vec()).unwrap());
+                    quals.push(String::from_utf8(record.quality.to_vec()).unwrap());
                 }
             }
 

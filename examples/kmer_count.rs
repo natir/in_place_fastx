@@ -20,10 +20,10 @@ struct Parser {
 
 impl in_place_fastx::fastq::Parser for Parser {
     fn record(&mut self, record: in_place_fastx::fastq::Record) {
-        if record.1.len() < K as usize {
+        if record.sequence.len() < K as usize {
             return;
         }
-        for kmer in cocktail::tokenizer::Tokenizer::new(record.1, K as u8) {
+        for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
             (*self.counter.get_mut(&kmer).unwrap()) += 1;
         }
     }
