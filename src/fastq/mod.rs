@@ -1,8 +1,11 @@
-use rayon::iter::ParallelIterator;
+/* crate use */
 use rayon::iter::ParallelBridge;
+use rayon::iter::ParallelIterator;
 
+/* project use */
 use crate::error;
 
+/* mod declaration */
 pub mod block;
 
 /* type declaratino*/
@@ -14,10 +17,33 @@ pub struct Record<'a> {
     pub quality: &'a [u8],
 }
 
-pub type Block = memmap::Mmap;
+/// Block reperesent a section of file memory mapped in file it's almost a &[u8]
+pub struct Block {
+    mem: memmap::Mmap,
+    end: usize,
+}
 
+impl Block {
+    pub fn new(end: usize, mem: memmap::Mmap) -> Self {
+        Self { mem, end }
+    }
 
+    pub fn data(&self) -> &[u8] {
+        &self.mem[..self.end]
+    }
+
+    pub fn len(&self) -> usize {
+	self.mem[..self.end].len()
+    }
+}
+
+/// Trait allow parsing of fastq
+///
+/// Blank implementation, do nothing you should reimplement record.
+///
+/// Reading is perform by block (by default of 8192 bytes). Parser get a block, this block is resize to remove incomplete record
 pub trait Parser {
+    /// Open a file and run record function on each function blocksize is 8192
     fn file<P>(&mut self, path: P) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,

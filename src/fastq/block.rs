@@ -1,8 +1,8 @@
+/* crate use */
 use bstr::ByteSlice;
 
+/* project use */
 use crate::error;
-
-pub type Block = memmap::Mmap;
 
 pub struct Producer {
     offset: u64,
@@ -39,7 +39,7 @@ impl Producer {
         })
     }
 
-    pub fn next_block(&mut self) -> error::Result<Option<Block>> {
+    pub fn next_block(&mut self) -> error::Result<Option<super::Block>> {
         log::debug!("next block");
         if self.offset == self.file_length {
             Ok(None)
@@ -54,7 +54,7 @@ impl Producer {
 
             self.offset = self.file_length;
 
-            Ok(Some(block))
+            Ok(Some(super::Block::new(block.len(), block)))
         } else {
             let tmp = unsafe {
                 memmap::MmapOptions::new()
@@ -64,17 +64,10 @@ impl Producer {
                     .map_err(|source| error::Error::MapFile { source })?
             };
 
-            let old_offset = self.offset;
             let blocksize = Producer::correct_block_size(&tmp)?;
             self.offset += blocksize;
 
-            Ok(Some(unsafe {
-                memmap::MmapOptions::new()
-                    .offset(old_offset)
-                    .len(blocksize as usize)
-                    .map(&self.file)
-                    .map_err(|source| error::Error::MapFile { source })?
-            }))
+            Ok(Some(super::Block::new(blocksize as usize, tmp)))
         }
     }
 
@@ -114,7 +107,7 @@ impl Producer {
 }
 
 impl Iterator for Producer {
-    type Item = error::Result<Block>;
+    type Item = error::Result<super::Block>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_block() {
@@ -127,21 +120,21 @@ impl Iterator for Producer {
 
 pub struct Reader {
     offset: usize,
-    block: memmap::Mmap,
+    block: super::Block,
 }
 
 impl Reader {
-    pub fn new(block: memmap::Mmap) -> Self {
+    pub fn new(block: super::Block) -> Self {
         Reader { offset: 0, block }
     }
 
     fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
         log::trace!(
             "BLOCK {}",
-            String::from_utf8(self.block[self.offset..].to_vec()).unwrap()
+            String::from_utf8(self.block.data()[self.offset..].to_vec()).unwrap()
         );
 
-        let next = self.block[self.offset..]
+        let next = self.block.data()[self.offset..]
             .find_byte(b'\n')
             .ok_or(error::Error::PartialRecord)?;
         let range = self.offset..self.offset + next;
@@ -154,19 +147,19 @@ impl Reader {
         if self.offset == self.block.len() {
             Ok(None)
         } else {
-            let comment = &self.block[self.get_line()?];
+            let comment = &self.block.data()[self.get_line()?];
             log::trace!("COMMENT {}", String::from_utf8(comment.to_vec()).unwrap());
             self.offset += comment.len() + 1;
 
-            let sequence = &self.block[self.get_line()?];
+            let sequence = &self.block.data()[self.get_line()?];
             log::trace!("SEQ {}", String::from_utf8(sequence.to_vec()).unwrap());
             self.offset += sequence.len() + 1;
 
-            let plus = &self.block[self.get_line()?];
+            let plus = &self.block.data()[self.get_line()?];
             log::trace!("PLUS {}", String::from_utf8(plus.to_vec()).unwrap());
             self.offset += plus.len() + 1;
 
-            let quality = &self.block[self.get_line()?];
+            let quality = &self.block.data()[self.get_line()?];
             log::trace!("QUAL {}", String::from_utf8(quality.to_vec()).unwrap());
             self.offset += quality.len() + 1;
 
@@ -232,7 +225,7 @@ mod tests {
             assert_eq!(block.len(), 308);
 
             assert_eq!(
-                String::from_utf8(block.as_ref().to_vec()).unwrap(),
+                String::from_utf8(block.data().to_vec()).unwrap(),
                 "@0
 TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
 +0
@@ -275,7 +268,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
             let mut tmp = Producer::with_blocksize(800, generate_fastq(42, 5, 150)).unwrap();
 
             assert_eq!(
-                String::from_utf8(tmp.next_block().unwrap().unwrap().as_ref().to_vec()),
+                String::from_utf8(tmp.next_block().unwrap().unwrap().data().to_vec()),
                 Ok("@0
 TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
 +0
@@ -287,7 +280,7 @@ iCW?:KL~15\\E|MNRKY)S$?~~Ub}d)dY2LX:e@b^'<<$$e56W0fdV,<Y>Yd(J<5p6xt)z+OxuPXv?/_y
 ".to_string())
             );
             assert_eq!(
-                String::from_utf8(tmp.next_block().unwrap().unwrap().as_ref().to_vec()),
+                String::from_utf8(tmp.next_block().unwrap().unwrap().data().to_vec()),
                 Ok("@2
 AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
 +2
@@ -299,7 +292,7 @@ TTGGGCATGAGGTTCACCGAAGGTGGCAGATATGCGCCATAAATTGACCAGGTTGTATCCAGCATTGGAAGAACGCACCC
 ".to_string())
             );
             assert_eq!(
-                String::from_utf8(tmp.next_block().unwrap().unwrap().as_ref().to_vec()),
+                String::from_utf8(tmp.next_block().unwrap().unwrap().data().to_vec()),
                 Ok("@4
 TCTATAGCTTGTCATGCCTTTCGATTGAGGGCGTCACCAAGCGAATTACTCGCTGATCCGTTCCCCGCCAATTCTGAGACTCCATAATCCTATCTGTGTCCCTAGGTGCCGTGTTCCGGTCGTGAGTTCGGCCCTTGCCTAAAGTTAATG
 +4
