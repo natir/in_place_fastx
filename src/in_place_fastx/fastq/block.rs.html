@@ -322,6 +322,11 @@
 <span id="320">320</span>
 <span id="321">321</span>
 <span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
 </pre><pre class="rust">
 <span class="comment">/* crate use */</span>
 <span class="kw">use</span> <span class="ident">bstr::ByteSlice</span>;
@@ -496,7 +501,9 @@
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">with_blocksize</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">463</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span>
+                <span class="ident">Producer::with_blocksize</span>(<span class="number">463</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>))
+                    .<span class="ident">unwrap</span>();
 
             <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>();
 
@@ -514,7 +521,8 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">with_blocksize_buffer_larger_file</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">8092</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">44</span>, <span class="number">2</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span>
+                <span class="ident">Producer::with_blocksize</span>(<span class="number">8092</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">44</span>, <span class="number">2</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
 
             <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>();
 
@@ -543,7 +551,8 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">check_block</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">800</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">5</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span>
+                <span class="ident">Producer::with_blocksize</span>(<span class="number">800</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">5</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
 
             <span class="macro">assert_eq!</span>(
                 <span class="ident">String::from_utf8</span>(<span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>().<span class="ident">data</span>().<span class="ident">to_vec</span>()),
@@ -587,7 +596,8 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&amp;&lt;.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">iterate_over_seq</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">500</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">5</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span>
+                <span class="ident">Producer::with_blocksize</span>(<span class="number">500</span>, <span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">5</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
 
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">comments</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seqs</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
