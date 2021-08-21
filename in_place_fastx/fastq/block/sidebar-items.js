@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Producer",""],["Reader",""]],"type":[["Block",""]]});
+initSidebarItems({"struct":[["Producer",""],["Reader",""]]});

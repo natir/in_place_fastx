@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["block",""]],"trait":[["Parser",""]],"type":[["BlockWorker",""],["Record",""],["RecordWorker",""]]});
+initSidebarItems({"mod":[["block",""]],"struct":[["Block","Block reperesent a section of file memory mapped in file it’s almost a &[u8]"],["Record","Record store a fastq record in public field"]],"trait":[["Parser","Trait allow parsing of fastq"]]});
