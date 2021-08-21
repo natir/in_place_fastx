@@ -177,39 +177,12 @@ impl Reader {
 mod tests {
     use super::*;
 
-    use std::io::Write;
-
-    use rand::Rng;
-    use rand::SeedableRng;
-
-    fn generate_fastq(seed: u64, nb_seq: usize, length: usize) -> tempfile::NamedTempFile {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-
-        let mut file = tempfile::NamedTempFile::new().unwrap();
-
-        let dna = [b'A', b'C', b'T', b'G'];
-        let qual = (0..94).collect::<Vec<u8>>();
-
-        for i in 0..nb_seq {
-            let dna_seq = (0..length)
-                .map(|_| dna[rng.gen_range(0..4)] as char)
-                .collect::<String>();
-            let qual_seq = (0..length)
-                .map(|_| (qual[rng.gen_range(0..94)] + 33) as char)
-                .collect::<String>();
-
-            writeln!(file, "@{}\n{}\n+{}\n{}", i, dna_seq, i, qual_seq).unwrap();
-        }
-
-        file
-    }
-
     mod producer {
         use super::*;
 
         #[test]
         fn new() {
-            let mut tmp = Producer::new(generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp = Producer::new(crate::tests::generate_fastq(42, 1_000, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -218,7 +191,7 @@ mod tests {
 
         #[test]
         fn with_blocksize() {
-            let mut tmp = Producer::with_blocksize(463, generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp = Producer::with_blocksize(463, crate::tests::generate_fastq(42, 1_000, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -236,7 +209,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         #[test]
         fn with_blocksize_buffer_larger_file() {
-            let mut tmp = Producer::with_blocksize(8092, generate_fastq(44, 2, 150)).unwrap();
+            let mut tmp = Producer::with_blocksize(8092, crate::tests::generate_fastq(44, 2, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
@@ -245,7 +218,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         #[test]
         fn get_all_block() {
-            let mut tmp = Producer::new(generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp = Producer::new(crate::tests::generate_fastq(42, 1_000, 150)).unwrap();
 
             let mut block_length = Vec::new();
             while let Ok(Some(block)) = tmp.next_block() {
@@ -265,7 +238,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
 
         #[test]
         fn check_block() {
-            let mut tmp = Producer::with_blocksize(800, generate_fastq(42, 5, 150)).unwrap();
+            let mut tmp = Producer::with_blocksize(800, crate::tests::generate_fastq(42, 5, 150)).unwrap();
 
             assert_eq!(
                 String::from_utf8(tmp.next_block().unwrap().unwrap().data().to_vec()),
@@ -309,7 +282,7 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
 
         #[test]
         fn iterate_over_seq() {
-            let mut producer = Producer::with_blocksize(500, generate_fastq(42, 5, 150)).unwrap();
+            let mut producer = Producer::with_blocksize(500, crate::tests::generate_fastq(42, 5, 150)).unwrap();
 
             let mut comments = Vec::new();
             let mut seqs = Vec::new();
