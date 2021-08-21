@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Sequential","Trait allow sequential parsing of fastq"]]});
