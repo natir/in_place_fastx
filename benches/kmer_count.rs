@@ -169,7 +169,7 @@ fn blocksize(c: &mut criterion::Criterion) {
         .build_global()
         .unwrap();
 
-    for power2 in 10..30 {
+    for power2 in 10..24 {
         g.bench_with_input(
             criterion::BenchmarkId::new("in_place_fastx", 2_u64.pow(power2)),
             &2_u64.pow(power2),
