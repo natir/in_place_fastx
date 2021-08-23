@@ -164,6 +164,10 @@ fn blocksize(c: &mut criterion::Criterion) {
 
     let mut g = c.benchmark_group("blocksize");
 
+    g.throughput(criterion::Throughput::Elements(
+        file.path().metadata().unwrap().len(),
+    ));
+
     rayon::ThreadPoolBuilder::new()
         .num_threads(4)
         .build_global()
