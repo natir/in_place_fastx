@@ -1,9 +1,12 @@
+//! Struct that extract part of file (called block) and read it as fastq file.
+
 /* crate use */
 use bstr::ByteSlice;
 
 /* project use */
 use crate::error;
 
+/// Struct that produce a [Block](super::Block) of file, this block contains complete record.
 pub struct Producer {
     offset: u64,
     blocksize: u64,
@@ -12,13 +15,15 @@ pub struct Producer {
 }
 
 impl Producer {
+    /// Build a [Block](super::Block) producer, default [Block](super::Block) size is 2^16 bytes.
     pub fn new<P>(path: P) -> error::Result<Self>
     where
         P: AsRef<std::path::Path>,
     {
-        Producer::with_blocksize(8192, path)
+        Producer::with_blocksize(65536, path)
     }
 
+    /// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.
     pub fn with_blocksize<P>(mut blocksize: u64, path: P) -> Result<Self, error::Error>
     where
         P: AsRef<std::path::Path>,
@@ -39,6 +44,7 @@ impl Producer {
         })
     }
 
+    /// Get the next [Block](super::Block), all [Block](super::Block) contains almost one record
     pub fn next_block(&mut self) -> error::Result<Option<super::Block>> {
         if self.offset == self.file_length {
             Ok(None)
@@ -65,11 +71,11 @@ impl Producer {
 
             let blocksize = Producer::correct_block_size(&tmp)?;
             self.offset += blocksize;
-
             Ok(Some(super::Block::new(blocksize as usize, tmp)))
         }
     }
 
+    /// Search the begin of the partial record at the end of [Block](super::Block)
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
         let mut end = block.len();
         let mut seen_plus = false;
@@ -108,16 +114,19 @@ impl Iterator for Producer {
     }
 }
 
+/// Struct that read [Block](super::Block) and produce [Record](super::Record)
 pub struct Reader {
     offset: usize,
     block: super::Block,
 }
 
 impl Reader {
+    /// Create a new [Block](super::Block) reader from [Block](super::Block) get in parameter
     pub fn new(block: super::Block) -> Self {
         Reader { offset: 0, block }
     }
 
+    /// Search next end of line
     fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
         let next = self.block.data()[self.offset..]
             .find_byte(b'\n')
@@ -127,6 +136,7 @@ impl Reader {
         Ok(range)
     }
 
+    /// Produce [Record](super::Record) until block is empty
     pub fn next_record(&mut self) -> error::Result<Option<super::Record<'_>>> {
         if self.offset == self.block.len() {
             Ok(None)
@@ -162,11 +172,13 @@ mod tests {
 
         #[test]
         fn new() {
-            let mut tmp = Producer::new(crate::tests::generate_fastq(42, 1_000, 150)).unwrap();
+            let mut tmp = Producer::new(crate::tests::generate_fastq(42, 100, 150)).unwrap();
 
             let block = tmp.next_block().unwrap().unwrap();
 
-            assert_eq!(block.len(), 7730);
+            assert_eq!(block.len(), 30980);
+
+            assert!(tmp.next_block().unwrap().is_none());
         }
 
         #[test]
@@ -208,15 +220,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
                 block_length.push(block.len());
             }
 
-            assert_eq!(
-                block_length,
-                vec![
-                    7730, 7750, 7750, 7750, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800, 7800,
-                    7800
-                ]
-            );
+            assert_eq!(block_length, vec![65300, 65208, 65208, 65208, 50856]);
         }
 
         #[test]
