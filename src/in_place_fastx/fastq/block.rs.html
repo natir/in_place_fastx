@@ -331,6 +331,69 @@
 <span id="329">329</span>
 <span id="330">330</span>
 <span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Struct that extract part of file (called block) and read it as fastq file.</span>
 
@@ -412,21 +475,28 @@
     <span class="doccomment">/// Search the begin of the partial record at the end of [Block](super::Block)</span>
     <span class="kw">fn</span> <span class="ident">correct_block_size</span>(<span class="ident">block</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">error::Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">end</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seen_plus</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
-        <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">8</span> {
+        <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">String::from_utf8</span>(<span class="ident">block</span>.<span class="ident">to_vec</span>()).<span class="ident">unwrap</span>());
+
+        <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="number">4</span> {
             <span class="ident">end</span> <span class="op">=</span> <span class="ident">block</span>[..<span class="ident">end</span>]
                 .<span class="ident">rfind_byte</span>(<span class="string">b&#39;\n&#39;</span>)
                 .<span class="ident">ok_or</span>(<span class="ident">error::Error::NoNewLineInBlock</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">if</span> <span class="ident">end</span> <span class="op">+</span> <span class="number">1</span> <span class="op">&lt;</span> <span class="ident">block</span>.<span class="ident">len</span>() {
-                <span class="ident">seen_plus</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">seen_plus</span> {
-                    <span class="ident">block</span>[<span class="ident">end</span> <span class="op">+</span> <span class="number">1</span>] <span class="op">=</span><span class="op">=</span> <span class="string">b&#39;+&#39;</span>
+            <span class="kw">if</span> <span class="ident">end</span> <span class="op">+</span> <span class="number">1</span> <span class="op">&lt;</span> <span class="ident">block</span>.<span class="ident">len</span>() <span class="op">&amp;&amp;</span> <span class="ident">block</span>[<span class="ident">end</span> <span class="op">+</span> <span class="number">1</span>] <span class="op">=</span><span class="op">=</span> <span class="string">b&#39;@&#39;</span> {
+                <span class="kw">let</span> <span class="ident">prev</span> <span class="op">=</span> <span class="ident">block</span>[..<span class="ident">end</span>]
+                    .<span class="ident">rfind_byte</span>(<span class="string">b&#39;\n&#39;</span>)
+                    .<span class="ident">ok_or</span>(<span class="ident">error::Error::NoNewLineInBlock</span>)<span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="ident">block</span>[<span class="ident">prev</span> <span class="op">+</span> <span class="number">1</span>] <span class="op">=</span><span class="op">=</span> <span class="string">b&#39;+&#39;</span> {
+                    <span class="kw">let</span> <span class="ident">prevprev</span> <span class="op">=</span> <span class="ident">block</span>[..<span class="ident">prev</span>]
+                        .<span class="ident">rfind_byte</span>(<span class="string">b&#39;\n&#39;</span>)
+                        .<span class="ident">ok_or</span>(<span class="ident">error::Error::NoNewLineInBlock</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="ident">block</span>[<span class="ident">prevprev</span> <span class="op">+</span> <span class="number">1</span>] <span class="op">=</span><span class="op">=</span> <span class="string">b&#39;+&#39;</span> {
+                        <span class="kw">return</span> <span class="prelude-val">Ok</span>((<span class="ident">end</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">u64</span>);
+                    } <span class="kw">else</span> {
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">error::Error::NotAFastqFile</span>);
+                    }
                 } <span class="kw">else</span> {
-                    <span class="ident">seen_plus</span>
-                };
-
-                <span class="kw">if</span> <span class="ident">seen_plus</span> <span class="op">&amp;&amp;</span> <span class="ident">block</span>[<span class="ident">end</span> <span class="op">+</span> <span class="number">1</span>] <span class="op">=</span><span class="op">=</span> <span class="string">b&#39;@&#39;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>((<span class="ident">end</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">u64</span>);
                 }
             }
@@ -504,6 +574,8 @@
     <span class="kw">mod</span> <span class="ident">producer</span> {
         <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
+        <span class="kw">use</span> <span class="ident">std::io::Write</span>;
+
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">new</span>() {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident">Producer::new</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">100</span>, <span class="number">150</span>)).<span class="ident">unwrap</span>();
@@ -554,7 +626,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
                 <span class="ident">block_length</span>.<span class="ident">push</span>(<span class="ident">block</span>.<span class="ident">len</span>());
             }
 
-            <span class="macro">assert_eq!</span>(<span class="ident">block_length</span>, <span class="macro">vec!</span>[<span class="number">65300</span>, <span class="number">65208</span>, <span class="number">65208</span>, <span class="number">65208</span>, <span class="number">50856</span>]);
+            <span class="macro">assert_eq!</span>(<span class="ident">block_length</span>, <span class="macro">vec!</span>[<span class="number">65300</span>, <span class="number">65520</span>, <span class="number">65520</span>, <span class="number">65520</span>, <span class="number">49920</span>]);
         }
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -596,6 +668,60 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&amp;&lt;.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z
             );
             <span class="macro">assert!</span>(<span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">is_ok</span>());
             <span class="macro">assert!</span>(<span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">is_none</span>());
+        }
+
+        <span class="attribute">#[<span class="ident">test</span>]</span>
+        <span class="kw">fn</span> <span class="ident">comment_start_by_plus</span>() {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tempfile::NamedTempFile::new</span>().<span class="ident">unwrap</span>();
+
+            <span class="ident">file</span>.<span class="ident">write</span>(<span class="string">b&quot;@0
+TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
++0
+^U3&lt;L0PV{cnrl:8N`!:=mF8M0!0Ez/d{4j$=9f5rLeAQ-H.ptT3w6aMy8Z6O-dZ}2`UX=YJ-Etg`s&amp;B%~F!kR7S8]@lTI&lt;2-\\&#39;;v0}hU.(T*0VHGx,&gt;Gze)*5rFv}k@RllOE2K)\&quot;DQJvO)bl?(dDhh
+@1
+AGTTATCGTGTACCTCCTAGCTTTTAGTTGTGCTTTAACAGTGTAACATTGGGACGCTATTACTCGCCGGTGAGGCGGTCTTCCTTGACTATACCGATCGTGGAGTTCATGCGCGCGGATCCCTCAGCGTTCTCGGGAAGCGCGAACAGA
++1
++CW?:KL~15\\E|MNRKY)S$?~~Ub}d)dY2LX:e@b^&#39;&lt;&lt;$$e56W0fdV,&lt;Y&gt;Yd(J&lt;5p6xt)z+OxuPXv?/_yH8z^%Sks1*nxm$&lt;7*YdkvNPf:&gt;YW=$uxZ)}[v/DlZm&amp;EW(s(cMelx\&quot;iEV3Hp]cz3%_T@\\Ms
+@2
+AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
++2
++uf)Y|l;S1!tk[U9n2(NK=#Tmg,t+CSsUMaPs7{+V&#39;~On{hc1NR}aY^YbYlg[}Fcq1K_$v1HG\&quot;tRBj`||g&gt;\\)2pU_QrnWO{c@;lw8B0+urH~$#K&gt;:iSa-I-C#gDJ(9UUFubOeRHsDX3Ko`?T--iL+j
+@3
+TTGGGCATGAGGTTCACCGAAGGTGGCAGATATGCGCCATAAATTGACCAGGTTGTATCCAGCATTGGAAGAACGCACCCGGGGGGAGCACAGATCCTAGCAGTACACGCTCTGGGTCCTCTACGTCTTCGGAGTCTCTAGCTTGCCTTA
++3
++~vGLKg+n!*iJ\\.*wfxK)5Qmh%&lt;:f^$nql7OB$}M/d.F,5[=&gt;ZW*#f=0&gt;Ao(@~lEHbSG1%,b_Uy2!zL%2GMB0O.t[#UcQ[]ufFZJ!K&lt;kLgDNQlx)s8+75E^[-\&quot;!1l[i&lt;S#G\&quot;B]xZ5?as*@8Laq`{@r
+@4
+TCTATAGCTTGTCATGCCTTTCGATTGAGGGCGTCACCAAGCGAATTACTCGCTGATCCGTTCCCCGCCAATTCTGAGACTCCATAATCCTATCTGTGTCCCTAGGTGCCGTGTTCCGGTCGTGAGTTCGGCCCTTGCCTAAAGTTAATG
++4
++yS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&amp;&lt;.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:&lt;6wf]^#t~0:i(X\\l-7]9olH9WLV~`L~JQ7ye7B1RSi2N$PuHwjj\\pb}J\\R~pe?j+X&gt;R#p@MyqBBe*
+&quot;</span>).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">618</span>, <span class="ident">file</span>).<span class="ident">unwrap</span>();
+
+            <span class="macro">assert_eq!</span>(
+                <span class="ident">String::from_utf8</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>().<span class="ident">data</span>().<span class="ident">to_vec</span>()),
+                <span class="prelude-val">Ok</span>(<span class="string">&quot;@0
+TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
++0
+^U3&lt;L0PV{cnrl:8N`!:=mF8M0!0Ez/d{4j$=9f5rLeAQ-H.ptT3w6aMy8Z6O-dZ}2`UX=YJ-Etg`s&amp;B%~F!kR7S8]@lTI&lt;2-\\&#39;;v0}hU.(T*0VHGx,&gt;Gze)*5rFv}k@RllOE2K)\&quot;DQJvO)bl?(dDhh
+@1
+AGTTATCGTGTACCTCCTAGCTTTTAGTTGTGCTTTAACAGTGTAACATTGGGACGCTATTACTCGCCGGTGAGGCGGTCTTCCTTGACTATACCGATCGTGGAGTTCATGCGCGCGGATCCCTCAGCGTTCTCGGGAAGCGCGAACAGA
++1
++CW?:KL~15\\E|MNRKY)S$?~~Ub}d)dY2LX:e@b^&#39;&lt;&lt;$$e56W0fdV,&lt;Y&gt;Yd(J&lt;5p6xt)z+OxuPXv?/_yH8z^%Sks1*nxm$&lt;7*YdkvNPf:&gt;YW=$uxZ)}[v/DlZm&amp;EW(s(cMelx\&quot;iEV3Hp]cz3%_T@\\Ms
+&quot;</span>.<span class="ident">to_string</span>())
+            );
+
+	    <span class="macro">assert_eq!</span>(
+                <span class="ident">String::from_utf8</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>().<span class="ident">data</span>().<span class="ident">to_vec</span>()),
+                <span class="prelude-val">Ok</span>(<span class="string">&quot;@2
+AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
++2
++uf)Y|l;S1!tk[U9n2(NK=#Tmg,t+CSsUMaPs7{+V&#39;~On{hc1NR}aY^YbYlg[}Fcq1K_$v1HG\&quot;tRBj`||g&gt;\\)2pU_QrnWO{c@;lw8B0+urH~$#K&gt;:iSa-I-C#gDJ(9UUFubOeRHsDX3Ko`?T--iL+j
+@3
+TTGGGCATGAGGTTCACCGAAGGTGGCAGATATGCGCCATAAATTGACCAGGTTGTATCCAGCATTGGAAGAACGCACCCGGGGGGAGCACAGATCCTAGCAGTACACGCTCTGGGTCCTCTACGTCTTCGGAGTCTCTAGCTTGCCTTA
++3
++~vGLKg+n!*iJ\\.*wfxK)5Qmh%&lt;:f^$nql7OB$}M/d.F,5[=&gt;ZW*#f=0&gt;Ao(@~lEHbSG1%,b_Uy2!zL%2GMB0O.t[#UcQ[]ufFZJ!K&lt;kLgDNQlx)s8+75E^[-\&quot;!1l[i&lt;S#G\&quot;B]xZ5?as*@8Laq`{@r
+&quot;</span>.<span class="ident">to_string</span>())
+            );
         }
     }
 
