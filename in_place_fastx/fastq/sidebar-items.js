@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["block","Struct that extract part of file (called block) and read it as fastq file."],["parser",""]],"struct":[["Block","Block reperesent a section of file memory mapped in file it’s almost a &[u8]"],["Record","Record store a fastq record in public field"]]});
+initSidebarItems({"mod":[["block","Struct that extract part of file (called block) and read it as fastq file."],["parser",""]],"struct":[["Block","Block reperesent a section of file memory mapped in file"],["Record","Record store a fastq record in public field"]]});

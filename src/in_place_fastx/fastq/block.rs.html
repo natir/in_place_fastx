@@ -445,7 +445,7 @@
     <span class="kw">where</span>
         <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">std::path::Path</span><span class="op">&gt;</span>,
     {
-        <span class="ident">Producer::with_blocksize</span>(<span class="number">65536</span>, <span class="ident">path</span>)
+        <span class="ident">Producer::with_blocksize</span>(<span class="kw">crate</span><span class="ident">::DEFAULT_BLOCKSIZE</span>, <span class="ident">path</span>)
     }
 
     <span class="doccomment">/// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.</span>

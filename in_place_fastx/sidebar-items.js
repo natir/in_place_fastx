@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["error",""],["fastq",""]]});
+initSidebarItems({"constant":[["DEFAULT_BLOCKSIZE",""]],"mod":[["error",""],["fastq",""]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["sequential",""],["shared_state",""]]});
+initSidebarItems({"mod":[["sequential",""],["shared_state","Struct that extract part of file (called block), each block is read in parallel"]]});
