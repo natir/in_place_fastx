@@ -11,25 +11,29 @@ pub struct Record<'a> {
     pub quality: &'a [u8],
 }
 
-/// Block reperesent a section of file memory mapped in file it's almost a &[u8]
+/// Block reperesent a section of file memory mapped in file
 pub struct Block {
     mem: memmap::Mmap,
     end: usize,
 }
 
 impl Block {
+    /// Create a new Block
     pub fn new(end: usize, mem: memmap::Mmap) -> Self {
         Self { mem, end }
     }
 
+    /// Acces to data owned by block
     pub fn data(&self) -> &[u8] {
         &self.mem[..self.end]
     }
 
+    /// Get length of block
     pub fn len(&self) -> usize {
         self.mem[..self.end].len()
     }
 
+    /// Return true if the block is empty
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

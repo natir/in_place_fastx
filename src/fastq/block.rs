@@ -20,7 +20,7 @@ impl Producer {
     where
         P: AsRef<std::path::Path>,
     {
-        Producer::with_blocksize(65536, path)
+        Producer::with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
     }
 
     /// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.

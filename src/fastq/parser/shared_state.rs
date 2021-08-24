@@ -1,3 +1,5 @@
+//! Struct that extract part of file (called block), each block is read in parallel
+
 /* crate use */
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
@@ -6,7 +8,13 @@ use rayon::iter::ParallelIterator;
 use crate::error;
 use crate::fastq;
 
+/// Trait allow parallel parsing of block.
+///
+/// Reading is perform by block. Parser map a block of file in memory, this block is resize to remove incomplete record.
+/// Block are read with a parallel iterator, each block is process in paralelle with function worker.
+/// data should be able to be share between process.
 pub trait SharedState {
+    /// Parse file indicate by path with default blocksize [crate::DEFAULT_BLOCKSIZE]
     fn parse<P, T>(&self, path: P, data: &T, worker: fn(fastq::Record, &T)) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,
@@ -15,6 +23,7 @@ pub trait SharedState {
         self.with_blocksize(8192, path, data, worker)
     }
 
+    /// Parse file indicate by path with selected blocksize
     fn with_blocksize<P, T>(
         &self,
         blocksize: u64,

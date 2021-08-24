@@ -7,13 +7,15 @@ use crate::fastq;
 /// Reading is perform by block. Parser map a block of file in memory, this block is resize to remove incomplete record.
 /// For each block record position is extract and `record` function is call on it.
 pub trait Sequential {
+    /// Parse file indicate by path with default blocksize [crate::DEFAULT_BLOCKSIZE]
     fn parse<P>(&mut self, path: P) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,
     {
-        self.with_blocksize(8192, path)
+        self.with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
     }
 
+    /// Parse file indicate by path with selected blocksize
     fn with_blocksize<P>(&mut self, blocksize: u64, path: P) -> error::Result<()>
     where
         P: AsRef<std::path::Path>,
@@ -27,6 +29,7 @@ pub trait Sequential {
         Ok(())
     }
 
+    /// Method call to parse a block
     fn block(&mut self, block: fastq::Block) -> error::Result<()> {
         let mut reader = fastq::block::Reader::new(block);
 
@@ -37,6 +40,7 @@ pub trait Sequential {
         Ok(())
     }
 
+    /// Method call to parse a record
     fn record(&mut self, _record: fastq::Record);
 }
 

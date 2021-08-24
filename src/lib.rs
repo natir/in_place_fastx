@@ -1,6 +1,8 @@
 pub mod error;
 pub mod fastq;
 
+pub const DEFAULT_BLOCKSIZE: u64 = 65536;
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;
