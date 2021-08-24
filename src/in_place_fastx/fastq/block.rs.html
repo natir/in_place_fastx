@@ -710,7 +710,7 @@ AGTTATCGTGTACCTCCTAGCTTTTAGTTGTGCTTTAACAGTGTAACATTGGGACGCTATTACTCGCCGGTGAGGCGGTC
 &quot;</span>.<span class="ident">to_string</span>())
             );
 
-	    <span class="macro">assert_eq!</span>(
+            <span class="macro">assert_eq!</span>(
                 <span class="ident">String::from_utf8</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap</span>().<span class="ident">data</span>().<span class="ident">to_vec</span>()),
                 <span class="prelude-val">Ok</span>(<span class="string">&quot;@2
 AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
