@@ -78,21 +78,28 @@ impl Producer {
     /// Search the begin of the partial record at the end of [Block](super::Block)
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
         let mut end = block.len();
-        let mut seen_plus = false;
 
-        for _ in 0..8 {
+        println!("{}", String::from_utf8(block.to_vec()).unwrap());
+
+        for _ in 0..4 {
             end = block[..end]
                 .rfind_byte(b'\n')
                 .ok_or(error::Error::NoNewLineInBlock)?;
 
-            if end + 1 < block.len() {
-                seen_plus = if !seen_plus {
-                    block[end + 1] == b'+'
+            if end + 1 < block.len() && block[end + 1] == b'@' {
+                let prev = block[..end]
+                    .rfind_byte(b'\n')
+                    .ok_or(error::Error::NoNewLineInBlock)?;
+                if block[prev + 1] == b'+' {
+                    let prevprev = block[..prev]
+                        .rfind_byte(b'\n')
+                        .ok_or(error::Error::NoNewLineInBlock)?;
+                    if block[prevprev + 1] == b'+' {
+                        return Ok((end + 1) as u64);
+                    } else {
+                        return Err(error::Error::NotAFastqFile);
+                    }
                 } else {
-                    seen_plus
-                };
-
-                if seen_plus && block[end + 1] == b'@' {
                     return Ok((end + 1) as u64);
                 }
             }
@@ -170,6 +177,8 @@ mod tests {
     mod producer {
         use super::*;
 
+        use std::io::Write;
+
         #[test]
         fn new() {
             let mut tmp = Producer::new(crate::tests::generate_fastq(42, 100, 150)).unwrap();
@@ -220,7 +229,7 @@ TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGG
                 block_length.push(block.len());
             }
 
-            assert_eq!(block_length, vec![65300, 65208, 65208, 65208, 50856]);
+            assert_eq!(block_length, vec![65300, 65520, 65520, 65520, 49920]);
         }
 
         #[test]
@@ -262,6 +271,60 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
             );
             assert!(tmp.next_block().is_ok());
             assert!(tmp.next_block().unwrap().is_none());
+        }
+
+        #[test]
+        fn comment_start_by_plus() {
+            let mut file = tempfile::NamedTempFile::new().unwrap();
+
+            file.write(b"@0
+TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
++0
+^U3<L0PV{cnrl:8N`!:=mF8M0!0Ez/d{4j$=9f5rLeAQ-H.ptT3w6aMy8Z6O-dZ}2`UX=YJ-Etg`s&B%~F!kR7S8]@lTI<2-\\';v0}hU.(T*0VHGx,>Gze)*5rFv}k@RllOE2K)\"DQJvO)bl?(dDhh
+@1
+AGTTATCGTGTACCTCCTAGCTTTTAGTTGTGCTTTAACAGTGTAACATTGGGACGCTATTACTCGCCGGTGAGGCGGTCTTCCTTGACTATACCGATCGTGGAGTTCATGCGCGCGGATCCCTCAGCGTTCTCGGGAAGCGCGAACAGA
++1
++CW?:KL~15\\E|MNRKY)S$?~~Ub}d)dY2LX:e@b^'<<$$e56W0fdV,<Y>Yd(J<5p6xt)z+OxuPXv?/_yH8z^%Sks1*nxm$<7*YdkvNPf:>YW=$uxZ)}[v/DlZm&EW(s(cMelx\"iEV3Hp]cz3%_T@\\Ms
+@2
+AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
++2
++uf)Y|l;S1!tk[U9n2(NK=#Tmg,t+CSsUMaPs7{+V'~On{hc1NR}aY^YbYlg[}Fcq1K_$v1HG\"tRBj`||g>\\)2pU_QrnWO{c@;lw8B0+urH~$#K>:iSa-I-C#gDJ(9UUFubOeRHsDX3Ko`?T--iL+j
+@3
+TTGGGCATGAGGTTCACCGAAGGTGGCAGATATGCGCCATAAATTGACCAGGTTGTATCCAGCATTGGAAGAACGCACCCGGGGGGAGCACAGATCCTAGCAGTACACGCTCTGGGTCCTCTACGTCTTCGGAGTCTCTAGCTTGCCTTA
++3
++~vGLKg+n!*iJ\\.*wfxK)5Qmh%<:f^$nql7OB$}M/d.F,5[=>ZW*#f=0>Ao(@~lEHbSG1%,b_Uy2!zL%2GMB0O.t[#UcQ[]ufFZJ!K<kLgDNQlx)s8+75E^[-\"!1l[i<S#G\"B]xZ5?as*@8Laq`{@r
+@4
+TCTATAGCTTGTCATGCCTTTCGATTGAGGGCGTCACCAAGCGAATTACTCGCTGATCCGTTCCCCGCCAATTCTGAGACTCCATAATCCTATCTGTGTCCCTAGGTGCCGTGTTCCGGTCGTGAGTTCGGCCCTTGCCTAAAGTTAATG
++4
++yS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^#t~0:i(X\\l-7]9olH9WLV~`L~JQ7ye7B1RSi2N$PuHwjj\\pb}J\\R~pe?j+X>R#p@MyqBBe*
+").unwrap();
+            let mut producer = Producer::with_blocksize(618, file).unwrap();
+
+            assert_eq!(
+                String::from_utf8(producer.next_block().unwrap().unwrap().data().to_vec()),
+                Ok("@0
+TTAGATTATAGTACGGTATAGTGGTTACTATGTAGCCTAAGTGGCGCCCGTTGTAGAGGAATCCACTTATATAACACAGGTATAATCCGGACGGCATGCGCAGGCATGCCTATATTCTATGACAGCAGGATTATGGAAGATGGTGCTCTA
++0
+^U3<L0PV{cnrl:8N`!:=mF8M0!0Ez/d{4j$=9f5rLeAQ-H.ptT3w6aMy8Z6O-dZ}2`UX=YJ-Etg`s&B%~F!kR7S8]@lTI<2-\\';v0}hU.(T*0VHGx,>Gze)*5rFv}k@RllOE2K)\"DQJvO)bl?(dDhh
+@1
+AGTTATCGTGTACCTCCTAGCTTTTAGTTGTGCTTTAACAGTGTAACATTGGGACGCTATTACTCGCCGGTGAGGCGGTCTTCCTTGACTATACCGATCGTGGAGTTCATGCGCGCGGATCCCTCAGCGTTCTCGGGAAGCGCGAACAGA
++1
++CW?:KL~15\\E|MNRKY)S$?~~Ub}d)dY2LX:e@b^'<<$$e56W0fdV,<Y>Yd(J<5p6xt)z+OxuPXv?/_yH8z^%Sks1*nxm$<7*YdkvNPf:>YW=$uxZ)}[v/DlZm&EW(s(cMelx\"iEV3Hp]cz3%_T@\\Ms
+".to_string())
+            );
+
+            assert_eq!(
+                String::from_utf8(producer.next_block().unwrap().unwrap().data().to_vec()),
+                Ok("@2
+AATGTCCCTCAATCCGCGGCATGGCTAAGTACCACCGTGGATGTAAATTTTTCAGTCGTCTCTTCATACTGTTCCTGTACTGTCAGGGATGCTCCCTTTCACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGC
++2
++uf)Y|l;S1!tk[U9n2(NK=#Tmg,t+CSsUMaPs7{+V'~On{hc1NR}aY^YbYlg[}Fcq1K_$v1HG\"tRBj`||g>\\)2pU_QrnWO{c@;lw8B0+urH~$#K>:iSa-I-C#gDJ(9UUFubOeRHsDX3Ko`?T--iL+j
+@3
+TTGGGCATGAGGTTCACCGAAGGTGGCAGATATGCGCCATAAATTGACCAGGTTGTATCCAGCATTGGAAGAACGCACCCGGGGGGAGCACAGATCCTAGCAGTACACGCTCTGGGTCCTCTACGTCTTCGGAGTCTCTAGCTTGCCTTA
++3
++~vGLKg+n!*iJ\\.*wfxK)5Qmh%<:f^$nql7OB$}M/d.F,5[=>ZW*#f=0>Ao(@~lEHbSG1%,b_Uy2!zL%2GMB0O.t[#UcQ[]ufFZJ!K<kLgDNQlx)s8+75E^[-\"!1l[i<S#G\"B]xZ5?as*@8Laq`{@r
+".to_string())
+            );
         }
     }
 
