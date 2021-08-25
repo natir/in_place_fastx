@@ -341,18 +341,36 @@ AGTTATCGTGTACCTC
 +CW?:KL~15\\E|MN
 GTCCCTCAATCCG
 +2
-FAILLED FILE
-+3
-+TTGGGCATGAGGTTCA
-+3
-+~vGLKg+n!*iJ\\K
 ",
             )
             .unwrap();
 
-            let mut producer = Producer::with_blocksize(82, file).unwrap();
+            let mut producer = Producer::with_blocksize(82, file.path()).unwrap();
 
             assert!(producer.next_block().is_err());
+
+            {
+                let mut rewrite = file.reopen().unwrap();
+                rewrite
+                    .write(
+                        b"+FAILLED FILE
++3
++TTGGGCATGAGGTTCA
+@3ueauie
++~vGLKg+n!*iJ\\K
+@iuiea
+",
+                    )
+                    .unwrap();
+            }
+
+            let mut producer = Producer::with_blocksize(82, file.path()).unwrap();
+
+            assert!(producer.next_block().is_err());
+
+            let mut producer = Producer::with_blocksize(82, file).unwrap();
+            assert!(producer.next().is_some());
+            assert!(producer.next().unwrap().is_err());
         }
     }
 

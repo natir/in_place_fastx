@@ -12,6 +12,7 @@ pub struct Record<'a> {
 }
 
 /// Block reperesent a section of file memory mapped in file
+#[derive(Debug)]
 pub struct Block {
     mem: memmap::Mmap,
     end: usize,
