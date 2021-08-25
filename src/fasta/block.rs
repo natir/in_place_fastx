@@ -54,7 +54,7 @@ impl AbcProducer for Producer {
             }
         }
 
-        Err(error::Error::NotAFastqFile)
+        Err(error::Error::NotAFastaFile)
     }
 
     /// Get current value of offset
