@@ -307,13 +307,6 @@
 <span id="305">305</span>
 <span id="306">306</span>
 <span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Struct that extract part of file (called block) and read it as fasta file.</span>
 
@@ -371,7 +364,7 @@
             }
         }
 
-        <span class="prelude-val">Err</span>(<span class="ident">error::Error::NotAFastqFile</span>)
+        <span class="prelude-val">Err</span>(<span class="ident">error::Error::NotAFastaFile</span>)
     }
 
     <span class="doccomment">/// Get current value of offset</span>
@@ -545,25 +538,18 @@ CACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGCTATGCTAGAGTTCGACGGATTGCGAACTG
             <span class="macro">assert!</span>(<span class="ident">tmp</span>.<span class="ident">next_block</span>().<span class="ident">unwrap</span>().<span class="ident">is_none</span>());
         }
 
-        <span class="attribute">#[<span class="ident">ignore</span>]</span>
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">not_a_fasta</span>() {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tempfile::NamedTempFile::new</span>().<span class="ident">unwrap</span>();
 
             <span class="ident">file</span>.<span class="ident">write</span>(
-                <span class="string">b&quot;&gt;0
-TTAGATTATAGTACGG
-ATTATAT
-&gt;1
-ATTA
-+CW?:KL~15\\E|MN
-&gt;2
-&quot;</span>,
+                <span class="string">b&quot;Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Vivamus ut nulla eget diam eleifend bibendum.
+Praesent porta sapien id tortor hendrerit, a hendrerit dolor commodo. Donec sed elit enim.&quot;</span>,
             )
             .<span class="ident">unwrap</span>();
 
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">82</span>, <span class="ident">file</span>.<span class="ident">path</span>()).<span class="ident">unwrap</span>();
-
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">150</span>, <span class="ident">file</span>.<span class="ident">path</span>()).<span class="ident">unwrap</span>();
             <span class="macro">assert!</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">is_err</span>());
 
             {

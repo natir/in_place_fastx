@@ -22,25 +22,31 @@
 <span id="20">20</span>
 <span id="21">21</span>
 <span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
 </pre><pre class="rust">
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">thiserror::Error</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> {
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;FastMap failled to read file metadata {source}&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;in_place_fastx failled to read file metadata {source}&quot;</span>)]</span>
     <span class="ident">MetaDataFile</span> { <span class="ident">source</span>: <span class="ident">std::io::Error</span> },
 
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;FastMap can&#39;t open file {source}&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;in_place_fastx can&#39;t open file {source}&quot;</span>)]</span>
     <span class="ident">OpenFile</span> { <span class="ident">source</span>: <span class="ident">std::io::Error</span> },
 
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;FastMap can&#39;t map file on memory {source}&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;in_place_fastx can&#39;t map file on memory {source}&quot;</span>)]</span>
     <span class="ident">MapFile</span> { <span class="ident">source</span>: <span class="ident">std::io::Error</span> },
 
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;FastMap didn&#39;t find new line in block increase block size&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;in_place_fastx didn&#39;t find new line in block increase block size&quot;</span>)]</span>
     <span class="ident">NoNewLineInBlock</span>,
 
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Input file seems not be a fastq file&quot;</span>)]</span>
     <span class="ident">NotAFastqFile</span>,
 
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;FastMap found a partial record&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Input file seems not be a fasta file&quot;</span>)]</span>
+    <span class="ident">NotAFastaFile</span>,
+
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;in_place_fastx found a partial record&quot;</span>)]</span>
     <span class="ident">PartialRecord</span>,
 }
 
