@@ -79,6 +79,7 @@
 <span id="77">77</span>
 <span id="78">78</span>
 <span id="79">79</span>
+<span id="80">80</span>
 </pre><pre class="rust">
 <span class="comment">/* mod declaration */</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">block</span>;
@@ -94,6 +95,7 @@
 }
 
 <span class="doccomment">/// Block reperesent a section of file memory mapped in file</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Block</span> {
     <span class="ident">mem</span>: <span class="ident">memmap::Mmap</span>,
     <span class="ident">end</span>: <span class="ident">usize</span>,

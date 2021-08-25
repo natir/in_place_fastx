@@ -422,6 +422,24 @@
 <span id="420">420</span>
 <span id="421">421</span>
 <span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
 </pre><pre class="rust">
 <span class="doccomment">//! Struct that extract part of file (called block) and read it as fastq file.</span>
 
@@ -766,18 +784,36 @@ AGTTATCGTGTACCTC
 +CW?:KL~15\\E|MN
 GTCCCTCAATCCG
 +2
-FAILLED FILE
-+3
-+TTGGGCATGAGGTTCA
-+3
-+~vGLKg+n!*iJ\\K
 &quot;</span>,
             )
             .<span class="ident">unwrap</span>();
 
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">82</span>, <span class="ident">file</span>).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">82</span>, <span class="ident">file</span>.<span class="ident">path</span>()).<span class="ident">unwrap</span>();
 
             <span class="macro">assert!</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">is_err</span>());
+
+            {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rewrite</span> <span class="op">=</span> <span class="ident">file</span>.<span class="ident">reopen</span>().<span class="ident">unwrap</span>();
+                <span class="ident">rewrite</span>
+                    .<span class="ident">write</span>(
+                        <span class="string">b&quot;+FAILLED FILE
++3
++TTGGGCATGAGGTTCA
+@3ueauie
++~vGLKg+n!*iJ\\K
+@iuiea
+&quot;</span>,
+                    )
+                    .<span class="ident">unwrap</span>();
+            }
+
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">82</span>, <span class="ident">file</span>.<span class="ident">path</span>()).<span class="ident">unwrap</span>();
+
+            <span class="macro">assert!</span>(<span class="ident">producer</span>.<span class="ident">next_block</span>().<span class="ident">is_err</span>());
+
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">Producer::with_blocksize</span>(<span class="number">82</span>, <span class="ident">file</span>).<span class="ident">unwrap</span>();
+            <span class="macro">assert!</span>(<span class="ident">producer</span>.<span class="ident">next</span>().<span class="ident">is_some</span>());
+            <span class="macro">assert!</span>(<span class="ident">producer</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="ident">is_err</span>());
         }
     }
 
