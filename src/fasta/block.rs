@@ -228,25 +228,18 @@ CACAGAGCTCGTATAATCAGTAAACGCCACGGTCCTTTCTCTGTTAACCGCTATGCTAGAGTTCGACGGATTGCGAACTG
             assert!(tmp.next_block().unwrap().is_none());
         }
 
-        #[ignore]
         #[test]
         fn not_a_fasta() {
             let mut file = tempfile::NamedTempFile::new().unwrap();
 
             file.write(
-                b">0
-TTAGATTATAGTACGG
-ATTATAT
->1
-ATTA
-+CW?:KL~15\\E|MN
->2
-",
+                b"Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Vivamus ut nulla eget diam eleifend bibendum.
+Praesent porta sapien id tortor hendrerit, a hendrerit dolor commodo. Donec sed elit enim.",
             )
             .unwrap();
 
-            let mut producer = Producer::with_blocksize(82, file.path()).unwrap();
-
+            let mut producer = Producer::with_blocksize(150, file.path()).unwrap();
             assert!(producer.next_block().is_err());
 
             {

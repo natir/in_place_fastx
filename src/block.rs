@@ -51,7 +51,7 @@ pub trait AbcProducer {
 
             Ok(Some(Block::new(block.len(), block)))
         } else {
-            let tmp = unsafe {
+            let block = unsafe {
                 memmap::MmapOptions::new()
                     .offset(self.offset())
                     .len(self.blocksize() as usize)
@@ -61,7 +61,7 @@ pub trait AbcProducer {
 
             let blocksize = Self::correct_block_size(&tmp)?;
             self.set_offset(self.offset() + blocksize);
-            Ok(Some(Block::new(blocksize as usize, tmp)))
+            Ok(Some(Block::new(blocksize as usize, block)))
         }
     }
 
