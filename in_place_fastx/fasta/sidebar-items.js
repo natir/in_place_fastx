@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["block","Struct that extract part of file (called block) and read it as fasta file."]],"struct":[["Record","Record store a fasta record all field is public"]]});

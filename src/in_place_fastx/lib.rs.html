@@ -34,8 +34,30 @@
 <span id="32">32</span>
 <span id="33">33</span>
 <span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
 </pre><pre class="rust">
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">block</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fasta</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fastq</span>;
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DEFAULT_BLOCKSIZE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">65536</span>;
@@ -64,6 +86,24 @@
                 .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>();
 
             <span class="macro">writeln!</span>(<span class="ident">file</span>, <span class="string">&quot;@{}\n{}\n+{}\n{}&quot;</span>, <span class="ident">i</span>, <span class="ident">dna_seq</span>, <span class="ident">i</span>, <span class="ident">qual_seq</span>).<span class="ident">unwrap</span>();
+        }
+
+        <span class="ident">file</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_fasta</span>(<span class="ident">seed</span>: <span class="ident">u64</span>, <span class="ident">nb_seq</span>: <span class="ident">usize</span>, <span class="ident">length</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">tempfile::NamedTempFile</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand::rngs::StdRng::seed_from_u64</span>(<span class="ident">seed</span>);
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tempfile::NamedTempFile::new</span>().<span class="ident">unwrap</span>();
+
+        <span class="kw">let</span> <span class="ident">dna</span> <span class="op">=</span> [<span class="string">b&#39;A&#39;</span>, <span class="string">b&#39;C&#39;</span>, <span class="string">b&#39;T&#39;</span>, <span class="string">b&#39;G&#39;</span>];
+
+        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">nb_seq</span> {
+            <span class="kw">let</span> <span class="ident">dna_seq</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">length</span>)
+                .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">dna</span>[<span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">0</span>..<span class="number">4</span>)] <span class="kw">as</span> <span class="ident">char</span>)
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>();
+
+            <span class="macro">writeln!</span>(<span class="ident">file</span>, <span class="string">&quot;&gt;{}\n{}&quot;</span>, <span class="ident">i</span>, <span class="ident">dna_seq</span>).<span class="ident">unwrap</span>();
         }
 
         <span class="ident">file</span>

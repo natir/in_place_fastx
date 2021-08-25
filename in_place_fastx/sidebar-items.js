@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["DEFAULT_BLOCKSIZE",""]],"mod":[["error",""],["fastq",""]]});
+initSidebarItems({"constant":[["DEFAULT_BLOCKSIZE",""]],"mod":[["block","Struct that extract part of file (called block) and read it as fastx file."],["error",""],["fasta",""],["fastq",""]]});
