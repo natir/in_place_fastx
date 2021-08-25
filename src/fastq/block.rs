@@ -4,6 +4,8 @@
 use bstr::ByteSlice;
 
 /* project use */
+use crate::block::AbcProducer;
+use crate::block::Block;
 use crate::error;
 
 /// Struct that produce a [Block](super::Block) of file, this block contains complete record.
@@ -24,57 +26,20 @@ impl Producer {
     }
 
     /// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.
-    pub fn with_blocksize<P>(mut blocksize: u64, path: P) -> Result<Self, error::Error>
+    pub fn with_blocksize<P>(blocksize: u64, path: P) -> Result<Self, error::Error>
     where
         P: AsRef<std::path::Path>,
     {
-        let file_length = path
-            .as_ref()
-            .metadata()
-            .map_err(|source| error::Error::MetaDataFile { source })?
-            .len();
-
-        blocksize = file_length.min(blocksize);
-
         Ok(Producer {
             offset: 0,
-            blocksize,
-            file_length,
+            blocksize: Self::fix_blocksize::<P>(&path, blocksize)?,
+            file_length: Self::filesize::<P>(&path)?,
             file: std::fs::File::open(path).map_err(|source| error::Error::OpenFile { source })?,
         })
     }
+}
 
-    /// Get the next [Block](super::Block), all [Block](super::Block) contains almost one record
-    pub fn next_block(&mut self) -> error::Result<Option<super::Block>> {
-        if self.offset == self.file_length {
-            Ok(None)
-        } else if self.offset + self.blocksize >= self.file_length {
-            let block = unsafe {
-                memmap::MmapOptions::new()
-                    .offset(self.offset)
-                    .len((self.file_length - self.offset) as usize)
-                    .map(&self.file)
-                    .map_err(|source| error::Error::MapFile { source })?
-            };
-
-            self.offset = self.file_length;
-
-            Ok(Some(super::Block::new(block.len(), block)))
-        } else {
-            let tmp = unsafe {
-                memmap::MmapOptions::new()
-                    .offset(self.offset)
-                    .len(self.blocksize as usize)
-                    .map(&self.file)
-                    .map_err(|source| error::Error::MapFile { source })?
-            };
-
-            let blocksize = Producer::correct_block_size(&tmp)?;
-            self.offset += blocksize;
-            Ok(Some(super::Block::new(blocksize as usize, tmp)))
-        }
-    }
-
+impl AbcProducer for Producer {
     /// Search the begin of the partial record at the end of [Block](super::Block)
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
         let mut end = block.len();
@@ -105,10 +70,35 @@ impl Producer {
 
         Err(error::Error::NotAFastqFile)
     }
+
+    /// Get current value of offset
+    fn offset(&self) -> u64 {
+        self.offset
+    }
+
+    /// Get file length
+    fn file_length(&self) -> u64 {
+        self.file_length
+    }
+
+    /// Get file
+    fn file(&self) -> &std::fs::File {
+        &self.file
+    }
+
+    /// Get blocksize
+    fn blocksize(&self) -> u64 {
+        self.blocksize
+    }
+
+    /// Set value of offset
+    fn set_offset(&mut self, value: u64) {
+        self.offset = value;
+    }
 }
 
 impl Iterator for Producer {
-    type Item = error::Result<super::Block>;
+    type Item = error::Result<Block>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_block() {
@@ -119,15 +109,15 @@ impl Iterator for Producer {
     }
 }
 
-/// Struct that read [Block](super::Block) and produce [Record](super::Record)
+/// Struct that read [Block](Block) and produce [Record](super::Record)
 pub struct Reader {
     offset: usize,
-    block: super::Block,
+    block: Block,
 }
 
 impl Reader {
-    /// Create a new [Block](super::Block) reader from [Block](super::Block) get in parameter
-    pub fn new(block: super::Block) -> Self {
+    /// Create a new [Block](Block) reader from [Block](Block) get in parameter
+    pub fn new(block: Block) -> Self {
         Reader { offset: 0, block }
     }
 

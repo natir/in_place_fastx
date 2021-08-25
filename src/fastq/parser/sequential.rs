@@ -1,4 +1,5 @@
 /* project use */
+use crate::block::AbcProducer;
 use crate::error;
 use crate::fastq;
 
@@ -30,7 +31,7 @@ pub trait Sequential {
     }
 
     /// Method call to parse a block
-    fn block(&mut self, block: fastq::Block) -> error::Result<()> {
+    fn block(&mut self, block: crate::block::Block) -> error::Result<()> {
         let mut reader = fastq::block::Reader::new(block);
 
         while let Some(record) = reader.next_record()? {
