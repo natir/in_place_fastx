@@ -2,6 +2,7 @@ pub mod block;
 pub mod error;
 pub mod fasta;
 pub mod fastq;
+pub mod parser;
 
 pub const DEFAULT_BLOCKSIZE: u64 = 65536;
 

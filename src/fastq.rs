@@ -4,8 +4,8 @@
 use bstr::ByteSlice;
 
 /* project use */
-use crate::block::AbcProducer;
-use crate::block::Block;
+use crate::block;
+use crate::block::Producer as AbcProducer;
 use crate::error;
 
 /// Struct that produce a [Block](super::Block) of file, this block contains complete record.
@@ -16,17 +16,11 @@ pub struct Producer {
     file_length: u64,
 }
 
-impl Producer {
-    /// Build a [Block](super::Block) producer, default [Block](super::Block) size is 2^16 bytes.
-    pub fn new<P>(path: P) -> error::Result<Self>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        Producer::with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
-    }
+impl Producer {}
 
+impl block::Producer for Producer {
     /// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.
-    pub fn with_blocksize<P>(blocksize: u64, path: P) -> Result<Self, error::Error>
+    fn with_blocksize<P>(blocksize: u64, path: P) -> Result<Self, error::Error>
     where
         P: AsRef<std::path::Path>,
     {
@@ -37,9 +31,7 @@ impl Producer {
             file: std::fs::File::open(path).map_err(|source| error::Error::OpenFile { source })?,
         })
     }
-}
 
-impl AbcProducer for Producer {
     /// Search the begin of the partial record at the end of [Block](super::Block)
     fn correct_block_size(block: &[u8]) -> error::Result<u64> {
         let mut end = block.len();
@@ -98,7 +90,7 @@ impl AbcProducer for Producer {
 }
 
 impl Iterator for Producer {
-    type Item = error::Result<Block>;
+    type Item = error::Result<block::Block>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_block() {
@@ -109,30 +101,20 @@ impl Iterator for Producer {
     }
 }
 
-/// Struct that read [Block](Block) and produce [Record](super::Record)
+/// Struct that read [Block](Block) and produce [Record](Record)
 pub struct Reader {
     offset: usize,
-    block: Block,
+    block: block::Block,
 }
 
-impl Reader {
+impl block::Reader for Reader {
     /// Create a new [Block](Block) reader from [Block](Block) get in parameter
-    pub fn new(block: Block) -> Self {
+    fn new(block: block::Block) -> Self {
         Reader { offset: 0, block }
     }
 
-    /// Search next end of line
-    fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
-        let next = self.block.data()[self.offset..]
-            .find_byte(b'\n')
-            .ok_or(error::Error::PartialRecord)?;
-        let range = self.offset..self.offset + next;
-
-        Ok(range)
-    }
-
-    /// Produce [Record](super::Record) until block is empty
-    pub fn next_record(&mut self) -> error::Result<Option<super::Record<'_>>> {
+    /// Produce [Record](Record) until block is empty
+    fn next_record(&mut self) -> error::Result<Option<block::Record<'_>>> {
         if self.offset == self.block.len() {
             Ok(None)
         } else {
@@ -148,13 +130,21 @@ impl Reader {
             let quality = &self.block.data()[self.get_line()?];
             self.offset += quality.len() + 1;
 
-            Ok(Some(super::Record {
+            Ok(Some(crate::block::Record {
                 comment,
                 sequence,
                 plus,
                 quality,
             }))
         }
+    }
+
+    fn data(&self) -> &[u8] {
+        self.block.data()
+    }
+
+    fn offset(&self) -> usize {
+        self.offset
     }
 }
 
@@ -366,6 +356,8 @@ GTCCCTCAATCCG
 
     mod reader {
         use super::*;
+
+        use crate::block::Reader as AbcReader;
 
         #[test]
         fn iterate_over_seq() {

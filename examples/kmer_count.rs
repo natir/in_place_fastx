@@ -1,4 +1,6 @@
-use in_place_fastx::fastq::parser::Sequential;
+use in_place_fastx::block;
+use in_place_fastx::fastq;
+use in_place_fastx::parser::Sequential;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -18,8 +20,8 @@ struct Parser {
     pub counter: std::collections::HashMap<u64, u64>,
 }
 
-impl Sequential for Parser {
-    fn record(&mut self, record: in_place_fastx::fastq::Record) {
+impl Sequential<fastq::Producer, fastq::Reader> for Parser {
+    fn record(&mut self, record: block::Record) {
         if record.sequence.len() < K as usize {
             return;
         }

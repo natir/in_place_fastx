@@ -1,5 +1,8 @@
 //! Struct that extract part of file (called block) and read it as fastx file.
 
+/* crate use */
+use bstr::ByteSlice;
+
 /* project use */
 use crate::error;
 
@@ -32,8 +35,15 @@ impl Block {
     }
 }
 
+pub struct Record<'a> {
+    pub comment: &'a [u8],
+    pub sequence: &'a [u8],
+    pub plus: &'a [u8],
+    pub quality: &'a [u8],
+}
+
 /// Trait to produce block
-pub trait AbcProducer {
+pub trait Producer {
     /// Get the next [Block](super::Block), all [Block](super::Block) contains almost one record
     fn next_block(&mut self) -> error::Result<Option<Block>> {
         if self.offset() == self.file_length() {
@@ -59,7 +69,7 @@ pub trait AbcProducer {
                     .map_err(|source| error::Error::MapFile { source })?
             };
 
-            let blocksize = Self::correct_block_size(&tmp)?;
+            let blocksize = Self::correct_block_size(&block)?;
             self.set_offset(self.offset() + blocksize);
             Ok(Some(Block::new(blocksize as usize, block)))
         }
@@ -81,9 +91,25 @@ pub trait AbcProducer {
     fn fix_blocksize<P>(path: &P, blocksize: u64) -> error::Result<u64>
     where
         P: AsRef<std::path::Path>,
+        Self: Sized,
     {
         Ok(Self::filesize::<P>(path)?.min(blocksize))
     }
+
+    /// Create a new Block producer
+    fn new<P>(path: P) -> error::Result<Self>
+    where
+        P: AsRef<std::path::Path>,
+        Self: Sized,
+    {
+        Self::with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
+    }
+
+    /// Create a new Block producer with a specific blocksize
+    fn with_blocksize<P>(blocksize: u64, path: P) -> error::Result<Self>
+    where
+        P: AsRef<std::path::Path>,
+        Self: Sized;
 
     /// Search the begin of the partial record at the end of [Block]
     fn correct_block_size(block: &[u8]) -> error::Result<u64>;
@@ -102,6 +128,26 @@ pub trait AbcProducer {
 
     /// Set value of offset
     fn set_offset(&mut self, value: u64);
+}
+
+pub trait Reader {
+    /// Search next end of line
+    fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
+        let next = self.data()[self.offset()..]
+            .find_byte(b'\n')
+            .ok_or(error::Error::PartialRecord)?;
+        let range = self.offset()..self.offset() + next;
+
+        Ok(range)
+    }
+
+    fn new(block: Block) -> Self;
+
+    fn next_record(&mut self) -> error::Result<Option<Record<'_>>>;
+
+    fn data(&self) -> &[u8];
+
+    fn offset(&self) -> usize;
 }
 
 #[cfg(test)]

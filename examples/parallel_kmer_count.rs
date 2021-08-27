@@ -1,4 +1,6 @@
-use in_place_fastx::fastq::parser::SharedState;
+use in_place_fastx::block;
+use in_place_fastx::fastq;
+use in_place_fastx::parser::SharedState;
 
 type Counter<T, const N: usize> = [T; N];
 trait AbsCounter {
@@ -18,10 +20,10 @@ struct Parser {
     pub counter: std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 }
 
-impl SharedState for Parser {}
+impl SharedState<fastq::Producer, fastq::Reader> for Parser {}
 
 fn worker(
-    record: in_place_fastx::fastq::Record,
+    record: block::Record,
     data: &std::collections::HashMap<u64, std::sync::atomic::AtomicU64>,
 ) {
     if record.sequence.len() < K as usize {
