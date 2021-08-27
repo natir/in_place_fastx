@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["block","Struct that extract part of file (called block) and read it as fastq file."],["parser",""]],"struct":[["Record","Record store a fastq record, all field is public"]]});
+initSidebarItems({"struct":[["Producer","Struct that produce a Block of file, this block contains complete record."],["Reader","Struct that read Block and produce Record"]]});
