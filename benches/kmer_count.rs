@@ -7,8 +7,8 @@ use rand::Rng;
 use rand::SeedableRng;
 
 /* project use */
-use in_place_fastx::fastq::parser::Sequential;
-use in_place_fastx::fastq::parser::SharedState;
+use in_place_fastx::parser::Sequential;
+use in_place_fastx::parser::SharedState;
 
 /* utils function */
 fn generate_fastq(seed: u64, nb_seq: usize, length: usize) -> tempfile::NamedTempFile {
@@ -62,9 +62,9 @@ struct Parser {
     pub counter: Counter<u64, KMER_SPACE>,
 }
 
-impl in_place_fastx::fastq::parser::Sequential for Parser {
+impl in_place_fastx::parser::Sequential<in_place_fastx::fastq::Producer, in_place_fastx::fastq::Reader> for Parser {
     #[cfg(not(tarpaulin_include))]
-    fn record(&mut self, record: in_place_fastx::fastq::Record) {
+    fn record(&mut self, record: in_place_fastx::block::Record) {
         for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
             self.counter[kmer as usize] += 1;
         }
@@ -88,10 +88,10 @@ struct ParserParallel {
     pub counter: Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 }
 
-impl in_place_fastx::fastq::parser::SharedState for ParserParallel {}
+impl in_place_fastx::parser::SharedState<in_place_fastx::fastq::Producer, in_place_fastx::fastq::Reader> for ParserParallel {}
 
 fn worker(
-    record: in_place_fastx::fastq::Record,
+    record: in_place_fastx::block::Record,
     data: &Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 ) {
     for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
