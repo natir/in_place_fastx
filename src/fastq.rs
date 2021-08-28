@@ -52,7 +52,14 @@ impl block::Producer for Producer {
                     if block[prevprev + 1] == b'+' {
                         return Ok((end + 1) as u64);
                     } else {
-                        return Err(error::Error::NotAFastqFile);
+                        let prevprevprev = block[..prevprev]
+                            .rfind_byte(b'\n')
+                            .ok_or(error::Error::NoNewLineInBlock)?;
+                        if block[prevprevprev + 1] == b'@' {
+                            return Ok((prevprevprev + 1) as u64);
+                        } else {
+                            return Err(error::Error::NotAFastqFile);
+                        }
                     }
                 } else {
                     return Ok((end + 1) as u64);
@@ -252,59 +259,15 @@ myS=C|jEWnl,aC\\7!jv9[!vh/PAK}_H&<.o]qf|y@4L:?ssLg3N!v7/N5RyPHn=5%Fyh(4-Z:<6wf]^
         }
 
         #[test]
-        fn comment_start_by_plus() {
-            let mut file = tempfile::NamedTempFile::new().unwrap();
+        fn quality_is_shit() {
+            let data = b"@1\nAA\n+1\n!!\n@2\nTT\n+2\n!!";
+            assert_eq!(Producer::correct_block_size(data).unwrap(), 12);
 
-            file.write(
-                b"@0
-TTAGATTATAGTACGG
-+0
-^U3<L0PV{cnrl:8N
-@1
-AGTTATCGTGTACCTC
-+1
-+CW?:KL~15\\E|MN
-@2
-AATGTCCCTCAATCCG
-+2
-+uf)Y|l;S1!tk[U9
-@3
-TTGGGCATGAGGTTCA
-+3
-+~vGLKg+n!*iJ\\K
-",
-            )
-            .unwrap();
+            let data = b"@1\nAA\n+1\n!!\n@2\nTT\n+2\n+!\n@3";
+            assert_eq!(Producer::correct_block_size(data).unwrap(), 24);
 
-            let mut producer = Producer::with_blocksize(82, file).unwrap();
-
-            assert_eq!(
-                String::from_utf8(producer.next_block().unwrap().unwrap().data().to_vec()),
-                Ok("@0
-TTAGATTATAGTACGG
-+0
-^U3<L0PV{cnrl:8N
-@1
-AGTTATCGTGTACCTC
-+1
-+CW?:KL~15\\E|MN
-"
-                .to_string())
-            );
-
-            assert_eq!(
-                String::from_utf8(producer.next_block().unwrap().unwrap().data().to_vec()),
-                Ok("@2
-AATGTCCCTCAATCCG
-+2
-+uf)Y|l;S1!tk[U9
-@3
-TTGGGCATGAGGTTCA
-+3
-+~vGLKg+n!*iJ\\K
-"
-                .to_string())
-            );
+            let data = b"@1\nAA\n+1\n!!\n@2\nTT\n+2\n@!";
+            assert_eq!(Producer::correct_block_size(data).unwrap(), 12);
         }
 
         #[test]

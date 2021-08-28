@@ -62,7 +62,12 @@ struct Parser {
     pub counter: Counter<u64, KMER_SPACE>,
 }
 
-impl in_place_fastx::parser::Sequential<in_place_fastx::fastq::Producer, in_place_fastx::fastq::Reader> for Parser {
+impl
+    in_place_fastx::parser::Sequential<
+        in_place_fastx::fastq::Producer,
+        in_place_fastx::fastq::Reader,
+    > for Parser
+{
     #[cfg(not(tarpaulin_include))]
     fn record(&mut self, record: in_place_fastx::block::Record) {
         for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
@@ -88,7 +93,13 @@ struct ParserParallel {
     pub counter: Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
 }
 
-impl in_place_fastx::parser::SharedState<in_place_fastx::fastq::Producer, in_place_fastx::fastq::Reader> for ParserParallel {}
+impl
+    in_place_fastx::parser::SharedState<
+        in_place_fastx::fastq::Producer,
+        in_place_fastx::fastq::Reader,
+    > for ParserParallel
+{
+}
 
 fn worker(
     record: in_place_fastx::block::Record,
@@ -173,7 +184,7 @@ fn blocksize(c: &mut criterion::Criterion) {
         .build_global()
         .unwrap();
 
-    for power2 in 10..24 {
+    for power2 in 11..24 {
         g.bench_with_input(
             criterion::BenchmarkId::new("in_place_fastx", 2_u64.pow(power2)),
             &2_u64.pow(power2),
