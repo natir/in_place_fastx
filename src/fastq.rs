@@ -5,155 +5,69 @@ use bstr::ByteSlice;
 
 /* project use */
 use crate::block;
-use crate::block::Producer as AbcProducer;
 use crate::error;
 
-/// Struct that produce a [Block](super::Block) of file, this block contains complete record.
-pub struct Producer {
-    offset: u64,
-    blocksize: u64,
-    file: std::fs::File,
-    file_length: u64,
-}
+impl_producer!(Producer, |block: &[u8]| {
+    let mut end = block.len();
 
-impl Producer {}
+    for _ in 0..4 {
+        end = block[..end]
+            .rfind_byte(b'\n')
+            .ok_or(error::Error::NoNewLineInBlock)?;
 
-impl block::Producer for Producer {
-    /// Build a [Block](super::Block) producer, with a specific [Block](super::Block) size warning this block size must be larger than two records.
-    fn with_blocksize<P>(blocksize: u64, path: P) -> Result<Self, error::Error>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        Ok(Producer {
-            offset: 0,
-            blocksize: Self::fix_blocksize::<P>(&path, blocksize)?,
-            file_length: Self::filesize::<P>(&path)?,
-            file: std::fs::File::open(path).map_err(|source| error::Error::OpenFile { source })?,
-        })
-    }
-
-    /// Search the begin of the partial record at the end of [Block](super::Block)
-    fn correct_block_size(block: &[u8]) -> error::Result<u64> {
-        let mut end = block.len();
-
-        for _ in 0..4 {
-            end = block[..end]
+        if end + 1 < block.len() && block[end + 1] == b'@' {
+            let prev = block[..end]
                 .rfind_byte(b'\n')
                 .ok_or(error::Error::NoNewLineInBlock)?;
-
-            if end + 1 < block.len() && block[end + 1] == b'@' {
-                let prev = block[..end]
+            if block[prev + 1] == b'+' {
+                let prevprev = block[..prev]
                     .rfind_byte(b'\n')
                     .ok_or(error::Error::NoNewLineInBlock)?;
-                if block[prev + 1] == b'+' {
-                    let prevprev = block[..prev]
+                if block[prevprev + 1] == b'+' {
+                    return Ok((end + 1) as u64);
+                } else {
+                    let prevprevprev = block[..prevprev]
                         .rfind_byte(b'\n')
                         .ok_or(error::Error::NoNewLineInBlock)?;
-                    if block[prevprev + 1] == b'+' {
-                        return Ok((end + 1) as u64);
+                    if block[prevprevprev + 1] == b'@' {
+                        return Ok((prevprevprev + 1) as u64);
                     } else {
-                        let prevprevprev = block[..prevprev]
-                            .rfind_byte(b'\n')
-                            .ok_or(error::Error::NoNewLineInBlock)?;
-                        if block[prevprevprev + 1] == b'@' {
-                            return Ok((prevprevprev + 1) as u64);
-                        } else {
-                            return Err(error::Error::NotAFastqFile);
-                        }
+                        return Err(error::Error::NotAFastqFile);
                     }
-                } else {
-                    return Ok((end + 1) as u64);
                 }
+            } else {
+                return Ok((end + 1) as u64);
             }
         }
-
-        Err(error::Error::NotAFastqFile)
     }
 
-    /// Get current value of offset
-    fn offset(&self) -> u64 {
-        self.offset
+    Err(error::Error::NotAFastqFile)
+});
+
+impl_reader!(Reader, |block: &'a block::Block, offset: &mut usize| {
+    if *offset == block.len() {
+        Ok(None)
+    } else {
+        let comment = &block.data()[Self::get_line(block, offset)?];
+        *offset += comment.len() + 1;
+
+        let sequence = &block.data()[Self::get_line(block, offset)?];
+        *offset += sequence.len() + 1;
+
+        let plus = &block.data()[Self::get_line(block, offset)?];
+        *offset += plus.len() + 1;
+
+        let quality = &block.data()[Self::get_line(block, offset)?];
+        *offset += quality.len() + 1;
+
+        Ok(Some(block::Record {
+            comment,
+            sequence,
+            plus,
+            quality,
+        }))
     }
-
-    /// Get file length
-    fn file_length(&self) -> u64 {
-        self.file_length
-    }
-
-    /// Get file
-    fn file(&self) -> &std::fs::File {
-        &self.file
-    }
-
-    /// Get blocksize
-    fn blocksize(&self) -> u64 {
-        self.blocksize
-    }
-
-    /// Set value of offset
-    fn set_offset(&mut self, value: u64) {
-        self.offset = value;
-    }
-}
-
-impl Iterator for Producer {
-    type Item = error::Result<block::Block>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.next_block() {
-            Ok(Some(block)) => Some(Ok(block)),
-            Ok(None) => None,
-            Err(e) => Some(Err(e)),
-        }
-    }
-}
-
-/// Struct that read [Block](Block) and produce [Record](Record)
-pub struct Reader {
-    offset: usize,
-    block: block::Block,
-}
-
-impl block::Reader for Reader {
-    /// Create a new [Block](Block) reader from [Block](Block) get in parameter
-    fn new(block: block::Block) -> Self {
-        Reader { offset: 0, block }
-    }
-
-    /// Produce [Record](Record) until block is empty
-    fn next_record(&mut self) -> error::Result<Option<block::Record<'_>>> {
-        if self.offset == self.block.len() {
-            Ok(None)
-        } else {
-            let comment = &self.block.data()[self.get_line()?];
-            self.offset += comment.len() + 1;
-
-            let sequence = &self.block.data()[self.get_line()?];
-            self.offset += sequence.len() + 1;
-
-            let plus = &self.block.data()[self.get_line()?];
-            self.offset += plus.len() + 1;
-
-            let quality = &self.block.data()[self.get_line()?];
-            self.offset += quality.len() + 1;
-
-            Ok(Some(crate::block::Record {
-                comment,
-                sequence,
-                plus,
-                quality,
-            }))
-        }
-    }
-
-    fn data(&self) -> &[u8] {
-        self.block.data()
-    }
-
-    fn offset(&self) -> usize {
-        self.offset
-    }
-}
+});
 
 #[cfg(test)]
 mod tests {
@@ -319,8 +233,6 @@ GTCCCTCAATCCG
 
     mod reader {
         use super::*;
-
-        use crate::block::Reader as AbcReader;
 
         #[test]
         fn iterate_over_seq() {

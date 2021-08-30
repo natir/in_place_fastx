@@ -50,7 +50,3 @@ incremental = false
 [[bench]]
 name = "kmer_count"
 harness = false
-
-
-[[example]]
-name = "kmer_count"

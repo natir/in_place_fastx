@@ -7,8 +7,9 @@ use rand::Rng;
 use rand::SeedableRng;
 
 /* project use */
-use in_place_fastx::parser::Sequential;
-use in_place_fastx::parser::SharedState;
+use in_place_fastx;
+use rayon::iter::ParallelBridge;
+use rayon::iter::ParallelIterator;
 
 /* utils function */
 fn generate_fastq(seed: u64, nb_seq: usize, length: usize) -> tempfile::NamedTempFile {
@@ -56,59 +57,37 @@ impl AbsCounter for Counter<std::sync::atomic::AtomicU64, 1024> {
 const K: u32 = 5;
 const KMER_SPACE: usize = 2_usize.pow(K * 2);
 
-/* FastMap parser definition */
-#[cfg(not(tarpaulin_include))]
-struct Parser {
-    pub counter: Counter<u64, KMER_SPACE>,
-}
-
-impl
-    in_place_fastx::parser::Sequential<
-        in_place_fastx::fastq::Producer,
-        in_place_fastx::fastq::Reader,
-    > for Parser
-{
-    #[cfg(not(tarpaulin_include))]
-    fn record(&mut self, record: in_place_fastx::block::Record) {
-        for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
-            self.counter[kmer as usize] += 1;
-        }
+/* in_place_fastx parser definition */
+in_place_fastx::fastq_sequential!(
+    Parser,
+    Counter<u64, KMER_SPACE>,
+    |record: in_place_fastx::block::Record, counter: &mut Counter<u64, KMER_SPACE>| {
+	for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
+            counter[kmer as usize] += 1;
+	}
     }
-}
+);
 
 fn in_place_fastx_kmer_count<P>(path: P, block_length: u64) -> Counter<u64, KMER_SPACE>
 where
     P: AsRef<std::path::Path>,
 {
-    let mut parser = Parser {
-        counter: Counter::new(),
-    };
-    parser.with_blocksize(block_length, path).unwrap();
+    let mut counter = Counter::new();
+    let mut parser = Parser::new();
+    parser
+        .with_blocksize(block_length, path, &mut counter)
+        .unwrap();
 
-    parser.counter
+    counter
 }
 
-/* FastMap parallel parser definition */
-struct ParserParallel {
-    pub counter: Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
-}
-
-impl
-    in_place_fastx::parser::SharedState<
-        in_place_fastx::fastq::Producer,
-        in_place_fastx::fastq::Reader,
-    > for ParserParallel
-{
-}
-
-fn worker(
-    record: in_place_fastx::block::Record,
-    data: &Counter<std::sync::atomic::AtomicU64, KMER_SPACE>,
-) {
+/* in_place_fastx parallel parser definition */
+in_place_fastx::fastq_sharedstate!(
+    ParserParallel, Counter<std::sync::atomic::AtomicU64, KMER_SPACE>, |record: in_place_fastx::block::Record, counter: &Counter<std::sync::atomic::AtomicU64, KMER_SPACE>| {
     for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
-        data[kmer as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        counter[kmer as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     }
-}
+});
 
 fn in_place_fastx_kmer_count_parallel<P>(
     path: P,
@@ -117,15 +96,12 @@ fn in_place_fastx_kmer_count_parallel<P>(
 where
     P: AsRef<std::path::Path>,
 {
-    let parser = ParserParallel {
-        counter: Counter::new(),
-    };
+    let mut counter = Counter::new();
+    let mut parser = ParserParallel::new();
 
-    parser
-        .with_blocksize(block_length, path, &parser.counter, worker)
-        .unwrap();
+    parser.with_blocksize(block_length, path, &counter).unwrap();
 
-    parser.counter
+    counter
 }
 
 /* rust bio parser */

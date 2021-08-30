@@ -1,10 +1,7 @@
 //! Struct that extract part of file (called block) and read it as fastx file.
-
 /* crate use */
-use bstr::ByteSlice;
 
 /* project use */
-use crate::error;
 
 /// Block reperesent a section of file memory mapped in file
 #[derive(Debug)]
@@ -42,112 +39,168 @@ pub struct Record<'a> {
     pub quality: &'a [u8],
 }
 
-/// Trait to produce block
-pub trait Producer {
-    /// Get the next [Block](super::Block), all [Block](super::Block) contains almost one record
-    fn next_block(&mut self) -> error::Result<Option<Block>> {
-        if self.offset() == self.file_length() {
-            Ok(None)
-        } else if self.offset() + self.blocksize() >= self.file_length() {
-            let block = unsafe {
-                memmap::MmapOptions::new()
-                    .offset(self.offset())
-                    .len((self.file_length() - self.offset()) as usize)
-                    .map(self.file())
-                    .map_err(|source| error::Error::MapFile { source })?
-            };
-
-            self.set_offset(self.file_length());
-
-            Ok(Some(Block::new(block.len(), block)))
-        } else {
-            let block = unsafe {
-                memmap::MmapOptions::new()
-                    .offset(self.offset())
-                    .len(self.blocksize() as usize)
-                    .map(self.file())
-                    .map_err(|source| error::Error::MapFile { source })?
-            };
-
-            let blocksize = Self::correct_block_size(&block)?;
-            self.set_offset(self.offset() + blocksize);
-            Ok(Some(Block::new(blocksize as usize, block)))
+#[macro_export(local_inner_macros)]
+macro_rules! impl_producer {
+    ($name:ident, $correct_block_size:expr) => {
+        pub struct $name {
+            offset: u64,
+            blocksize: u64,
+            file: std::fs::File,
+            file_length: u64,
         }
-    }
 
-    /// Get file size
-    fn filesize<P>(path: &P) -> error::Result<u64>
-    where
-        P: AsRef<std::path::Path>,
-    {
-        Ok(path
-            .as_ref()
-            .metadata()
-            .map_err(|source| error::Error::MetaDataFile { source })?
-            .len())
-    }
+        impl $name {
+            /// Create a new Block producer
+            #[inline(always)]
+            pub fn new<P>(path: P) -> error::Result<Self>
+            where
+                P: AsRef<std::path::Path>,
+                Self: Sized,
+            {
+                Self::with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
+            }
 
-    /// Fix blocksize
-    fn fix_blocksize<P>(path: &P, blocksize: u64) -> error::Result<u64>
-    where
-        P: AsRef<std::path::Path>,
-        Self: Sized,
-    {
-        Ok(Self::filesize::<P>(path)?.min(blocksize))
-    }
+            pub fn with_blocksize<P>(blocksize: u64, path: P) -> error::Result<Self>
+            where
+                P: AsRef<std::path::Path>,
+            {
+                Ok(Self {
+                    offset: 0,
+                    blocksize: Self::fix_blocksize::<P>(&path, blocksize)?,
+                    file_length: Self::filesize::<P>(&path)?,
+                    file: std::fs::File::open(path)
+                        .map_err(|source| error::Error::OpenFile { source })?,
+                })
+            }
 
-    /// Create a new Block producer
-    fn new<P>(path: P) -> error::Result<Self>
-    where
-        P: AsRef<std::path::Path>,
-        Self: Sized,
-    {
-        Self::with_blocksize(crate::DEFAULT_BLOCKSIZE, path)
-    }
+            pub fn next_block(&mut self) -> error::Result<Option<block::Block>> {
+                if self.offset() == self.file_length() {
+                    Ok(None)
+                } else if self.offset() + self.blocksize() >= self.file_length() {
+                    let block = unsafe {
+                        memmap::MmapOptions::new()
+                            .offset(self.offset())
+                            .len((self.file_length() - self.offset()) as usize)
+                            .map(self.file())
+                            .map_err(|source| error::Error::MapFile { source })?
+                    };
 
-    /// Create a new Block producer with a specific blocksize
-    fn with_blocksize<P>(blocksize: u64, path: P) -> error::Result<Self>
-    where
-        P: AsRef<std::path::Path>,
-        Self: Sized;
+                    self.set_offset(self.file_length());
 
-    /// Search the begin of the partial record at the end of [Block]
-    fn correct_block_size(block: &[u8]) -> error::Result<u64>;
+                    Ok(Some(block::Block::new(block.len(), block)))
+                } else {
+                    let block = unsafe {
+                        memmap::MmapOptions::new()
+                            .offset(self.offset())
+                            .len(self.blocksize() as usize)
+                            .map(self.file())
+                            .map_err(|source| error::Error::MapFile { source })?
+                    };
 
-    /// Get current value of offset
-    fn offset(&self) -> u64;
+                    let blocksize = Self::correct_block_size(&block)?;
+                    self.set_offset(self.offset() + blocksize);
+                    Ok(Some(block::Block::new(blocksize as usize, block)))
+                }
+            }
 
-    /// Get file length
-    fn file_length(&self) -> u64;
+            /// Get file size
+            pub fn filesize<P>(path: &P) -> error::Result<u64>
+            where
+                P: AsRef<std::path::Path>,
+            {
+                Ok(path
+                    .as_ref()
+                    .metadata()
+                    .map_err(|source| error::Error::MetaDataFile { source })?
+                    .len())
+            }
 
-    /// Get file
-    fn file(&self) -> &std::fs::File;
+            /// Fix blocksize
+            pub fn fix_blocksize<P>(path: &P, blocksize: u64) -> error::Result<u64>
+            where
+                P: AsRef<std::path::Path>,
+                Self: Sized,
+            {
+                Ok(Self::filesize::<P>(path)?.min(blocksize))
+            }
 
-    /// Get blocksize
-    fn blocksize(&self) -> u64;
+            /// Search the begin of the partial record at the end of [Block](Block)
+            #[inline(always)]
+            pub fn correct_block_size(block: &[u8]) -> error::Result<u64> {
+                $correct_block_size(block)
+            }
 
-    /// Set value of offset
-    fn set_offset(&mut self, value: u64);
+            /// Get current value of offset
+            pub fn offset(&self) -> u64 {
+                self.offset
+            }
+
+            /// Get file length
+            pub fn file_length(&self) -> u64 {
+                self.file_length
+            }
+
+            /// Get file
+            pub fn file(&self) -> &std::fs::File {
+                &self.file
+            }
+
+            /// Get blocksize
+            pub fn blocksize(&self) -> u64 {
+                self.blocksize
+            }
+
+            /// Set value of offset
+            pub fn set_offset(&mut self, value: u64) {
+                self.offset = value;
+            }
+        }
+
+        impl Iterator for $name {
+            type Item = error::Result<block::Block>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                match self.next_block() {
+                    Ok(Some(block)) => Some(Ok(block)),
+                    Ok(None) => None,
+                    Err(e) => Some(Err(e)),
+                }
+            }
+        }
+    };
 }
 
-pub trait Reader {
-    /// Search next end of line
-    fn get_line(&self) -> error::Result<std::ops::Range<usize>> {
-        let next = self.data()[self.offset()..]
-            .find_byte(b'\n')
-            .ok_or(error::Error::PartialRecord)?;
-        let range = self.offset()..self.offset() + next;
+#[macro_export(local_inner_macros)]
+macro_rules! impl_reader {
+    ($name:ident, $next_record:expr) => {
+        pub struct $name {
+            offset: usize,
+            block: block::Block,
+        }
 
-        Ok(range)
-    }
+        impl $name {
+            pub fn new(block: block::Block) -> Self {
+                Reader { offset: 0, block }
+            }
 
-    fn new(block: Block) -> Self;
+            #[inline(always)]
+            pub fn next_record<'a>(&'a mut self) -> error::Result<Option<block::Record<'a>>> {
+                $next_record(&mut self.block, &mut self.offset)
+            }
 
-    fn next_record(&mut self) -> error::Result<Option<Record<'_>>>;
+            pub fn get_line(
+                block: &block::Block,
+                offset: &usize,
+            ) -> error::Result<std::ops::Range<usize>> {
+                let next = block.data()[*offset..]
+                    .find_byte(b'\n')
+                    .ok_or(error::Error::PartialRecord)?;
+                let range = *offset..*offset + next;
 
-    fn data(&self) -> &[u8];
-
-    fn offset(&self) -> usize;
+                Ok(range)
+            }
+        }
+    };
 }
 
 #[cfg(test)]

@@ -1,4 +1,8 @@
+//#![warn(missing_docs)]
+
+#[macro_use]
 pub mod block;
+
 pub mod error;
 pub mod fasta;
 pub mod fastq;

@@ -1,191 +1,191 @@
 //! Struct that extract part of file (called block), each block is read in parallel
 
-/* crate use */
-use rayon::iter::ParallelBridge;
-use rayon::iter::ParallelIterator;
+#[macro_export(local_inner_macros)]
+macro_rules! impl_sharedstate {
+    ($name:ident, $producer:expr, $reader:expr, $data_type:ty, $record:expr) => {
+        pub struct $name {}
 
-/* project use */
-use crate::block;
-use crate::error;
+        impl $name {
+            pub fn new() -> Self {
+                Self {}
+            }
 
-/// Trait allow parallel parsing of block.
-///
-/// Reading is perform by block. Parser map a block of file in memory, this block is resize to remove incomplete record.
-/// Block are read with a parallel iterator, each block is process in paralelle with function worker.
-/// data should be able to be share between process.
-pub trait SharedState<B, R>
-where
-    B: block::Producer + Iterator<Item = error::Result<block::Block>> + Send,
-    R: block::Reader,
-{
-    /// Parse file indicate by path with default blocksize [crate::DEFAULT_BLOCKSIZE]
-    fn parse<P, T>(&self, path: P, data: &T, worker: fn(block::Record, &T)) -> error::Result<()>
-    where
-        P: AsRef<std::path::Path>,
-        T: std::marker::Send + std::marker::Sync,
-    {
-        self.with_blocksize(8192, path, data, worker)
-    }
+            pub fn parse<P>(&mut self, path: P, data: &$data_type) -> $crate::error::Result<()>
+            where
+                P: AsRef<std::path::Path>,
+            {
+                self.with_blocksize($crate::DEFAULT_BLOCKSIZE, path, data)
+            }
 
-    /// Parse file indicate by path with selected blocksize
-    fn with_blocksize<P, T>(
-        &self,
-        blocksize: u64,
-        path: P,
-        data: &T,
-        worker: fn(block::Record, &T),
-    ) -> error::Result<()>
-    where
-        P: AsRef<std::path::Path>,
-        T: std::marker::Send + std::marker::Sync,
-    {
-        let producer = B::with_blocksize(blocksize, path)?;
+            fn with_blocksize<P>(
+                &self,
+                blocksize: u64,
+                path: P,
+                data: &$data_type,
+            ) -> $crate::error::Result<()>
+            where
+                P: AsRef<std::path::Path>,
+            {
+                let producer = $producer(blocksize, path)?;
 
-        match producer
-            .par_bridge()
-            .map(|block| {
-                let mut reader = R::new(block?);
-                while let Some(record) = reader.next_record()? {
-                    worker(record, data);
+                match producer
+                    .par_bridge()
+                    .map(|block| {
+                        let mut reader = $reader(block?);
+                        while let Some(record) = reader.next_record()? {
+                            $record(record, data);
+                        }
+                        Ok(())
+                    })
+                    .find_any(|x| x.is_err())
+                {
+                    Some(e) => e,
+                    None => Ok(()),
                 }
-                Ok(())
-            })
-            .find_any(|x| x.is_err())
-        {
-            Some(e) => e,
-            None => Ok(()),
+            }
         }
+    };
+}
+
+#[macro_export(local_inner_macros)]
+macro_rules! fasta_sharedstate {
+    ($name:ident, $data_type:ty, $record:expr) => {
+        impl_sharedstate!(
+            $name,
+            $crate::fasta::Producer::with_blocksize,
+            $crate::fasta::Reader::new,
+            $data_type,
+            $record
+        );
+    }
+}
+
+#[macro_export(local_inner_macros)]
+macro_rules! fastq_sharedstate {
+    ($name:ident, $data_type:ty, $record:expr) => {
+        impl_sharedstate!(
+            $name,
+            $crate::fastq::Producer::with_blocksize,
+            $crate::fastq::Reader::new,
+            $data_type,
+            $record
+        );
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    /* crate use */
+    use rayon::iter::ParallelBridge;
+    use rayon::iter::ParallelIterator;
 
+    /* project use */
+    use crate::block;
+    use crate::error;
     use crate::fasta;
     use crate::fastq;
-    use crate::parser::tests::AbsBaseCount;
-
-    impl crate::parser::tests::AbsBaseCount
-        for crate::parser::tests::BaseCount<std::sync::atomic::AtomicU64>
-    {
-        fn new() -> Self {
-            [
-                std::sync::atomic::AtomicU64::new(0),
-                std::sync::atomic::AtomicU64::new(0),
-                std::sync::atomic::AtomicU64::new(0),
-                std::sync::atomic::AtomicU64::new(0),
-            ]
-        }
-    }
 
     #[test]
     fn record_count_fasta() {
-        struct Counter {}
+        fasta_sharedstate!(
+            FastaRecordCount,
+            std::sync::atomic::AtomicU64,
+            |_record: block::Record, counter: &std::sync::atomic::AtomicU64| {
+                counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+        );
 
-        impl<'a> SharedState<fasta::Producer, fasta::Reader> for Counter {}
+        let counter = std::sync::atomic::AtomicU64::new(0);
 
-        fn worker(_record: block::Record, data: &std::sync::atomic::AtomicU64) {
-            data.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        }
-
-        let parser = Counter {};
-        let data = std::sync::atomic::AtomicU64::new(0);
+        let mut parser = FastaRecordCount::new();
 
         parser
-            .parse(crate::tests::generate_fasta(42, 1_000, 150), &data, worker)
+            .parse(crate::tests::generate_fasta(42, 1_000, 150), &counter)
             .unwrap();
 
-        assert_eq!(1000, data.into_inner());
+        assert_eq!(1000, counter.into_inner());
     }
 
     #[test]
     fn base_count_fasta() {
-        struct Counter {
-            pub bases: crate::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
-        }
-
-        impl<'a> SharedState<fasta::Producer, fasta::Reader> for Counter {}
-
-        fn worker(
-            record: crate::block::Record,
-            data: &crate::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
-        ) {
-            for nuc in record.sequence {
-                data[(nuc >> 1 & 0b11) as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        fasta_sharedstate!(
+            FastaRecordCount,
+            [std::sync::atomic::AtomicU64; 4],
+            |record: block::Record, counter: &[std::sync::atomic::AtomicU64; 4]| {
+                for nuc in record.sequence {
+                    counter[(nuc >> 1 & 0b11) as usize]
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }
             }
-        }
+        );
 
-        let parser = Counter {
-            bases: crate::parser::tests::BaseCount::new(),
-        };
+        let counter = [
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+        ];
+
+        let mut parser = FastaRecordCount::new();
 
         parser
-            .with_blocksize(
-                8192,
-                crate::tests::generate_fasta(42, 1_000, 150),
-                &parser.bases,
-                worker,
-            )
+            .with_blocksize(8192, crate::tests::generate_fasta(42, 1_000, 150), &counter)
             .unwrap();
 
         assert_eq!([37378, 37548, 37548, 37526], unsafe {
-            std::mem::transmute::<[std::sync::atomic::AtomicU64; 4], [u64; 4]>(parser.bases)
+            std::mem::transmute::<[std::sync::atomic::AtomicU64; 4], [u64; 4]>(counter)
         });
     }
 
     #[test]
     fn record_count_fastq() {
-        struct Counter {}
+        fastq_sharedstate!(
+            FastqRecordCount,
+            std::sync::atomic::AtomicU64,
+            |_record: block::Record, counter: &std::sync::atomic::AtomicU64| {
+                counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+        );
 
-        impl<'a> SharedState<fastq::Producer, fastq::Reader> for Counter {}
+        let counter = std::sync::atomic::AtomicU64::new(0);
 
-        fn worker(_record: block::Record, data: &std::sync::atomic::AtomicU64) {
-            data.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        }
-
-        let parser = Counter {};
-        let data = std::sync::atomic::AtomicU64::new(0);
+        let mut parser = FastqRecordCount::new();
 
         parser
-            .parse(crate::tests::generate_fastq(42, 1_000, 150), &data, worker)
+            .parse(crate::tests::generate_fastq(42, 1_000, 150), &counter)
             .unwrap();
 
-        assert_eq!(1000, data.into_inner());
+        assert_eq!(1000, counter.into_inner());
     }
 
     #[test]
     fn base_count_fastq() {
-        struct Counter {
-            pub bases: crate::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
-        }
-
-        impl<'a> SharedState<fastq::Producer, fastq::Reader> for Counter {}
-
-        fn worker(
-            record: block::Record,
-            data: &crate::parser::tests::BaseCount<std::sync::atomic::AtomicU64>,
-        ) {
-            for nuc in record.sequence {
-                data[(nuc >> 1 & 0b11) as usize].fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        fastq_sharedstate!(
+            FastqRecordCount,
+            [std::sync::atomic::AtomicU64; 4],
+            |record: block::Record, counter: &[std::sync::atomic::AtomicU64; 4]| {
+                for nuc in record.sequence {
+                    counter[(nuc >> 1 & 0b11) as usize]
+                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }
             }
-        }
+        );
 
-        let parser = Counter {
-            bases: crate::parser::tests::BaseCount::new(),
-        };
+        let counter = [
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+        ];
+
+        let mut parser = FastqRecordCount::new();
 
         parser
-            .with_blocksize(
-                8192,
-                crate::tests::generate_fastq(42, 1_000, 150),
-                &parser.bases,
-                worker,
-            )
+            .with_blocksize(8192, crate::tests::generate_fastq(42, 1_000, 150), &counter)
             .unwrap();
 
         assert_eq!([37301, 37496, 37624, 37579], unsafe {
-            std::mem::transmute::<[std::sync::atomic::AtomicU64; 4], [u64; 4]>(parser.bases)
+            std::mem::transmute::<[std::sync::atomic::AtomicU64; 4], [u64; 4]>(counter)
         });
     }
 }
