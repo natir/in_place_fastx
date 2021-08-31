@@ -57,7 +57,7 @@ macro_rules! fasta_sharedstate {
             $data_type,
             $record
         );
-    }
+    };
 }
 
 #[macro_export(local_inner_macros)]
@@ -70,7 +70,7 @@ macro_rules! fastq_sharedstate {
             $data_type,
             $record
         );
-    }
+    };
 }
 
 #[cfg(test)]
@@ -81,9 +81,6 @@ mod tests {
 
     /* project use */
     use crate::block;
-    use crate::error;
-    use crate::fasta;
-    use crate::fastq;
 
     #[test]
     fn record_count_fasta() {
@@ -129,7 +126,7 @@ mod tests {
         let mut parser = FastaRecordCount::new();
 
         parser
-            .with_blocksize(8192, crate::tests::generate_fasta(42, 1_000, 150), &counter)
+            .parse(crate::tests::generate_fasta(42, 1_000, 150), &counter)
             .unwrap();
 
         assert_eq!([37378, 37548, 37548, 37526], unsafe {
@@ -181,7 +178,7 @@ mod tests {
         let mut parser = FastqRecordCount::new();
 
         parser
-            .with_blocksize(8192, crate::tests::generate_fastq(42, 1_000, 150), &counter)
+            .parse(crate::tests::generate_fastq(42, 1_000, 150), &counter)
             .unwrap();
 
         assert_eq!([37301, 37496, 37624, 37579], unsafe {
