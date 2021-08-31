@@ -64,7 +64,7 @@ macro_rules! fasta_sequential {
             $data_type,
             $record
         );
-    }
+    };
 }
 
 #[macro_export(local_inner_macros)]
@@ -77,13 +77,12 @@ macro_rules! fastq_sequential {
             $data_type,
             $record
         );
-    }
+    };
 }
 
 #[cfg(test)]
 mod tests {
     use crate::block;
-    use crate::error;
     use crate::fasta;
     use crate::fastq;
 

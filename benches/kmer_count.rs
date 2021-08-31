@@ -62,9 +62,9 @@ in_place_fastx::fastq_sequential!(
     Parser,
     Counter<u64, KMER_SPACE>,
     |record: in_place_fastx::block::Record, counter: &mut Counter<u64, KMER_SPACE>| {
-	for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
+    for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
             counter[kmer as usize] += 1;
-	}
+    }
     }
 );
 
