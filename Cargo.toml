@@ -28,8 +28,13 @@ thiserror  = "1"
 
 
 [dev-dependencies]
+# test dependencie
 tempfile   = "3"
 rand       = "0.8"
+
+# example dependencie
+clap       = "3.0.0-beta.2"
+lazy_static = "1"
 
 # bench dependencie
 criterion  = "0.3"
