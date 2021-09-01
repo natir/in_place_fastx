@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Block","Block reperesent a section of file memory mapped in file"],["Record",""]],"trait":[["Producer","Trait to produce block"],["Reader",""]]});
+initSidebarItems({"struct":[["Block","Block reperesent a section of file memory mapped in file"],["Record",""]]});

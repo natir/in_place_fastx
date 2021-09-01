@@ -152,157 +152,221 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
 </pre><pre class="rust">
-<span class="comment">/* project use */</span>
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::block</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::error</span>;
+<span class="attribute">#[<span class="ident">macro_export</span>(<span class="ident">local_inner_macros</span>)]</span>
+<span class="macro">macro_rules!</span> <span class="ident">impl_sequential</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">producer</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">reader</span>:<span class="ident">expr</span>,  <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>:<span class="ident">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="kw">pub</span> <span class="kw">struct</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> {}
 
-<span class="doccomment">/// Trait allow sequential parsing of fastq</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Reading is perform by block. Parser map a block of file in memory, this block is resize to remove incomplete record.</span>
-<span class="doccomment">/// For each block record position is extract and `record` function is call on it.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Sequential</span><span class="op">&lt;</span><span class="ident">B</span>, <span class="ident">R</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">B</span>: <span class="ident">block::Producer</span>,
-    <span class="ident">R</span>: <span class="ident">block::Reader</span>,
-{
-    <span class="doccomment">/// Parse file indicate by path with default blocksize [crate::DEFAULT_BLOCKSIZE]</span>
-    <span class="kw">fn</span> <span class="ident">parse</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">path</span>: <span class="ident">P</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">std::path::Path</span><span class="op">&gt;</span>,
-    {
-        <span class="self">self</span>.<span class="ident">with_blocksize</span>(<span class="kw">crate</span><span class="ident">::DEFAULT_BLOCKSIZE</span>, <span class="ident">path</span>)
-    }
+        <span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span> {
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+                <span class="self">Self</span> {}
+            }
 
-    <span class="doccomment">/// Parse file indicate by path with selected blocksize</span>
-    <span class="kw">fn</span> <span class="ident">with_blocksize</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">blocksize</span>: <span class="ident">u64</span>, <span class="ident">path</span>: <span class="ident">P</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">std::path::Path</span><span class="op">&gt;</span>,
-    {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="ident">B::with_blocksize</span>(<span class="ident">blocksize</span>, <span class="ident">path</span>)<span class="question-mark">?</span>;
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">path</span>: <span class="ident">P</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+            <span class="kw">where</span>
+                <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">std::path::Path</span><span class="op">&gt;</span>,
+            {
+                <span class="self">self</span>.<span class="ident">with_blocksize</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::DEFAULT_BLOCKSIZE</span>, <span class="ident">path</span>, <span class="ident">data</span>)
+            }
 
-        <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">producer</span>.<span class="ident">next_block</span>()<span class="question-mark">?</span> {
-            <span class="self">self</span>.<span class="ident">block</span>(<span class="ident">block</span>)<span class="question-mark">?</span>
+            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_blocksize</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>(
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+                <span class="ident">blocksize</span>: <span class="ident">u64</span>,
+                <span class="ident">path</span>: <span class="ident">P</span>,
+                <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>,
+            ) <span class="op">-</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+            <span class="kw">where</span>
+                <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">std::path::Path</span><span class="op">&gt;</span>,
+            {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">producer</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">producer</span>(<span class="ident">blocksize</span>, <span class="ident">path</span>)<span class="question-mark">?</span>;
+
+                <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">block</span>) <span class="op">=</span> <span class="ident">producer</span>.<span class="ident">next_block</span>()<span class="question-mark">?</span> {
+                    <span class="self">self</span>.<span class="ident">block</span>(<span class="ident">block</span>, <span class="ident">data</span>)<span class="question-mark">?</span>
+                }
+
+                <span class="prelude-val">Ok</span>(())
+            }
+
+            <span class="kw">fn</span> <span class="ident">block</span>(
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+                <span class="ident">block</span>: <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::block::Block</span>,
+                <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>,
+            ) <span class="op">-</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">reader</span>(<span class="ident">block</span>);
+
+                <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">record</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next_record</span>()<span class="question-mark">?</span> {
+                    <span class="self">self</span>.<span class="ident">record</span>(<span class="ident">record</span>, <span class="ident">data</span>);
+                }
+
+                <span class="prelude-val">Ok</span>(())
+            }
+
+            <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">record</span>: <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::block::Record</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>) <span class="op">-</span><span class="op">&gt;</span> () {
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>(<span class="ident">record</span>, <span class="ident">data</span>);
+            }
         }
+    };
+}
 
-        <span class="prelude-val">Ok</span>(())
-    }
+<span class="attribute">#[<span class="ident">macro_export</span>(<span class="ident">local_inner_macros</span>)]</span>
+<span class="macro">macro_rules!</span> <span class="ident">fasta_sequential</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>:<span class="ident">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="macro">impl_sequential!</span>(
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>,
+            <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::fasta::Producer::with_blocksize</span>,
+            <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::fasta::Reader::new</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>
+        );
+    };
+}
 
-    <span class="doccomment">/// Method call to parse a block</span>
-    <span class="kw">fn</span> <span class="ident">block</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">block</span>: <span class="kw">crate</span><span class="ident">::block::Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">error::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">R::new</span>(<span class="ident">block</span>);
-
-        <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">record</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next_record</span>()<span class="question-mark">?</span> {
-            <span class="self">self</span>.<span class="ident">record</span>(<span class="ident">record</span>)
-        }
-
-        <span class="prelude-val">Ok</span>(())
-    }
-
-    <span class="doccomment">/// Method call to parse a record</span>
-    <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_record</span>: <span class="kw">crate</span><span class="ident">::block::Record</span>);
+<span class="attribute">#[<span class="ident">macro_export</span>(<span class="ident">local_inner_macros</span>)]</span>
+<span class="macro">macro_rules!</span> <span class="ident">fastq_sequential</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>:<span class="ident">ty</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="macro">impl_sequential!</span>(
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>,
+            <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::fastq::Producer::with_blocksize</span>,
+            <span class="macro-nonterminal">$</span><span class="kw">crate</span><span class="macro-nonterminal">::fastq::Reader::new</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">data_type</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">record</span>
+        );
+    };
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-
+    <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::block</span>;
     <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::fasta</span>;
     <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::fastq</span>;
-    <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::parser::tests::AbsBaseCount</span>;
-
-    <span class="kw">impl</span> <span class="kw">crate</span><span class="ident">::parser::tests::AbsBaseCount</span> <span class="kw">for</span> <span class="kw">crate</span><span class="ident">::parser::tests::BaseCount</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-            [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]
-        }
-    }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">record_count_fasta</span>() {
-        <span class="kw">struct</span> <span class="ident">Counter</span> {
-            <span class="kw">pub</span> <span class="ident">count</span>: <span class="ident">u64</span>,
-        }
-
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Sequential</span><span class="op">&lt;</span><span class="ident">fasta::Producer</span>, <span class="ident">fasta::Reader</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Counter</span> {
-            <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_record</span>: <span class="ident">block::Record</span>) {
-                <span class="self">self</span>.<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="macro">impl_sequential!</span>(
+            <span class="ident">FastaRecordCount</span>,
+            <span class="ident">fasta::Producer::with_blocksize</span>,
+            <span class="ident">fasta::Reader::new</span>,
+            <span class="ident">u64</span>,
+            <span class="op">|</span><span class="ident">_record</span>: <span class="ident">block::Record</span>, <span class="ident">counter</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">u64</span><span class="op">|</span> {
+                <span class="kw-2">*</span><span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             }
-        }
+        );
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">Counter</span> { <span class="ident">count</span>: <span class="number">0</span> };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counter</span> <span class="op">=</span> <span class="number">0</span>;
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">FastaRecordCount::new</span>();
+
         <span class="ident">parser</span>
-            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fasta</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>))
+            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fasta</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">counter</span>)
             .<span class="ident">unwrap</span>();
 
-        <span class="macro">assert_eq!</span>(<span class="number">1_000</span>, <span class="ident">parser</span>.<span class="ident">count</span>);
+        <span class="macro">assert_eq!</span>(<span class="number">1_000</span>, <span class="ident">counter</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">base_count_fasta</span>() {
-        <span class="kw">struct</span> <span class="ident">Counter</span> {
-            <span class="kw">pub</span> <span class="ident">bases</span>: <span class="kw">crate</span><span class="ident">::parser::tests::BaseCount</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-        }
-
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Sequential</span><span class="op">&lt;</span><span class="ident">fasta::Producer</span>, <span class="ident">fasta::Reader</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Counter</span> {
-            <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">record</span>: <span class="ident">block::Record</span>) {
+        <span class="macro">impl_sequential!</span>(
+            <span class="ident">FastaNucCount</span>,
+            <span class="ident">fasta::Producer::with_blocksize</span>,
+            <span class="ident">fasta::Reader::new</span>,
+            [<span class="ident">u64</span>; <span class="number">4</span>],
+            <span class="op">|</span><span class="ident">record</span>: <span class="ident">block::Record</span>, <span class="ident">bases</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u64</span>; <span class="number">4</span>]<span class="op">|</span> {
                 <span class="kw">for</span> <span class="ident">nuc</span> <span class="kw">in</span> <span class="ident">record</span>.<span class="ident">sequence</span> {
-                    <span class="self">self</span>.<span class="ident">bases</span>[(<span class="ident">nuc</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">&amp;</span> <span class="number">0b11</span>) <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="ident">bases</span>[(<span class="ident">nuc</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">&amp;</span> <span class="number">0b11</span>) <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
                 }
             }
-        }
+        );
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">Counter</span> {
-            <span class="ident">bases</span>: <span class="kw">crate</span><span class="ident">::parser::tests::BaseCount::new</span>(),
-        };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bases</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">4</span>];
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">FastaNucCount::new</span>();
+
         <span class="ident">parser</span>
-            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fasta</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>))
+            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fasta</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bases</span>)
             .<span class="ident">unwrap</span>();
 
-        <span class="macro">assert_eq!</span>([<span class="number">37378</span>, <span class="number">37548</span>, <span class="number">37548</span>, <span class="number">37526</span>], <span class="ident">parser</span>.<span class="ident">bases</span>);
+        <span class="macro">assert_eq!</span>([<span class="number">37378</span>, <span class="number">37548</span>, <span class="number">37548</span>, <span class="number">37526</span>], <span class="ident">bases</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">record_count_fastq</span>() {
-        <span class="kw">struct</span> <span class="ident">Counter</span> {
-            <span class="kw">pub</span> <span class="ident">count</span>: <span class="ident">u64</span>,
-        }
-
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Sequential</span><span class="op">&lt;</span><span class="ident">fastq::Producer</span>, <span class="ident">fastq::Reader</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Counter</span> {
-            <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_record</span>: <span class="ident">block::Record</span>) {
-                <span class="self">self</span>.<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="macro">impl_sequential!</span>(
+            <span class="ident">FastqRecordCount</span>,
+            <span class="ident">fastq::Producer::with_blocksize</span>,
+            <span class="ident">fastq::Reader::new</span>,
+            <span class="ident">u64</span>,
+            <span class="op">|</span><span class="ident">_record</span>: <span class="ident">block::Record</span>, <span class="ident">counter</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">u64</span><span class="op">|</span> {
+                <span class="kw-2">*</span><span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             }
-        }
+        );
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">Counter</span> { <span class="ident">count</span>: <span class="number">0</span> };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counter</span> <span class="op">=</span> <span class="number">0</span>;
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">FastqRecordCount::new</span>();
+
         <span class="ident">parser</span>
-            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>))
+            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">counter</span>)
             .<span class="ident">unwrap</span>();
 
-        <span class="macro">assert_eq!</span>(<span class="number">1_000</span>, <span class="ident">parser</span>.<span class="ident">count</span>);
+        <span class="macro">assert_eq!</span>(<span class="number">1_000</span>, <span class="ident">counter</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">base_count_fastq</span>() {
-        <span class="kw">struct</span> <span class="ident">Counter</span> {
-            <span class="kw">pub</span> <span class="ident">bases</span>: <span class="kw">crate</span><span class="ident">::parser::tests::BaseCount</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-        }
-
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Sequential</span><span class="op">&lt;</span><span class="ident">fastq::Producer</span>, <span class="ident">fastq::Reader</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Counter</span> {
-            <span class="kw">fn</span> <span class="ident">record</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">record</span>: <span class="ident">block::Record</span>) {
+        <span class="macro">impl_sequential!</span>(
+            <span class="ident">FastqNucCount</span>,
+            <span class="ident">fastq::Producer::with_blocksize</span>,
+            <span class="ident">fastq::Reader::new</span>,
+            [<span class="ident">u64</span>; <span class="number">4</span>],
+            <span class="op">|</span><span class="ident">record</span>: <span class="ident">block::Record</span>, <span class="ident">bases</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u64</span>; <span class="number">4</span>]<span class="op">|</span> {
                 <span class="kw">for</span> <span class="ident">nuc</span> <span class="kw">in</span> <span class="ident">record</span>.<span class="ident">sequence</span> {
-                    <span class="self">self</span>.<span class="ident">bases</span>[(<span class="ident">nuc</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">&amp;</span> <span class="number">0b11</span>) <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="ident">bases</span>[(<span class="ident">nuc</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">1</span> <span class="op">&amp;</span> <span class="number">0b11</span>) <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
                 }
             }
-        }
+        );
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">Counter</span> {
-            <span class="ident">bases</span>: <span class="kw">crate</span><span class="ident">::parser::tests::BaseCount::new</span>(),
-        };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bases</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">4</span>];
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parser</span> <span class="op">=</span> <span class="ident">FastqNucCount::new</span>();
+
         <span class="ident">parser</span>
-            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>))
+            .<span class="ident">parse</span>(<span class="kw">crate</span><span class="ident">::tests::generate_fastq</span>(<span class="number">42</span>, <span class="number">1_000</span>, <span class="number">150</span>), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bases</span>)
             .<span class="ident">unwrap</span>();
 
-        <span class="macro">assert_eq!</span>([<span class="number">37301</span>, <span class="number">37496</span>, <span class="number">37624</span>, <span class="number">37579</span>], <span class="ident">parser</span>.<span class="ident">bases</span>);
+        <span class="macro">assert_eq!</span>([<span class="number">37301</span>, <span class="number">37496</span>, <span class="number">37624</span>, <span class="number">37579</span>], <span class="ident">bases</span>);
     }
 }
 </pre></div>

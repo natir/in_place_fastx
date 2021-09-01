@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Producer","Struct that produce a Block of file, this block contains complete record."],["Reader","Struct that read Block and produce Record"]]});
+initSidebarItems({"struct":[["Producer",""],["Reader",""]]});

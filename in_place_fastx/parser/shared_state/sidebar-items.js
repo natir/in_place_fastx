@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["SharedState","Trait allow parallel parsing of block."]]});
+initSidebarItems({});
