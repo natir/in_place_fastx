@@ -35,7 +35,7 @@ struct Command {
     pub blocksize: u64,
 }
 
-const NUC_SPACE: usize = 4;
+const NUC_SPACE: usize = 8;
 const QUAL_SPACE: usize = 93;
 lazy_static! {
     static ref PERR: [f64; QUAL_SPACE] = {
@@ -57,7 +57,7 @@ lazy_static! {
 pub struct PosInfo {
     threshold: u8,
     quality_counts: Vec<u64>,
-    bases_count: [u64; NUC_SPACE],
+    bases_count: [u64; NUC_SPACE], // A -> 0, C -> 1, G -> 3, T -> 2, N -> 7
 }
 
 impl PosInfo {
@@ -92,10 +92,11 @@ impl Display for PosInfo {
             .sum::<u64>() as f64;
 
         write!(f, "{}\t", sum)?; // number of bases
-        for nuc in 0..NUC_SPACE {
-            // nucleotide order is A, C, G and T
-            write!(f, "{:.1}\t", 100.0 * self.bases_count[nuc] as f64 / sum)?;
-        }
+        write!(f, "{:.1}\t", 100.0 * self.bases_count[0] as f64 / sum)?; // A
+        write!(f, "{:.1}\t", 100.0 * self.bases_count[1] as f64 / sum)?; // C
+        write!(f, "{:.1}\t", 100.0 * self.bases_count[3] as f64 / sum)?; // G
+        write!(f, "{:.1}\t", 100.0 * self.bases_count[2] as f64 / sum)?; // T
+        write!(f, "{:.1}\t", 100.0 * self.bases_count[7] as f64 / sum)?; // N
 
         write!(f, "{:.1}\t", q_sum / sum)?; // average quality
         write!(f, "{:.1}\t", -4.343 * ((p_sum + 1e-6) / (sum + 1e-6)).ln())?; // average error
@@ -144,7 +145,10 @@ impl Display for Data {
             self.min_len, self.max_len, self.average_len, 0
         )?;
 
-        writeln!(f, "POS\t#bases\t%A\t%C\t%G\t%T\tavgQ\terrQ\t%low\t%high")?;
+        writeln!(
+            f,
+            "POS\t#bases\t%A\t%C\t%G\t%T\t%N\tavgQ\terrQ\t%low\t%high"
+        )?;
 
         for (i, pos) in self.pos_infos.iter().enumerate() {
             writeln!(f, "{}\t{}", i, pos)?;
@@ -181,7 +185,7 @@ in_place_fastx::fastq_sequential!(
 
         for (indice, (nuc, qual)) in record.sequence.iter().zip(record.quality).enumerate() {
             data.pos_infos[indice].quality_counts[(qual - data.phred_offset) as usize] += 1;
-            data.pos_infos[indice].bases_count[(nuc >> 1 & 0b11) as usize] += 1;
+            data.pos_infos[indice].bases_count[(nuc >> 1 & 0b111) as usize] += 1;
         }
     }
 );
@@ -192,7 +196,7 @@ fn main() -> in_place_fastx::error::Result<()> {
     let mut data = Data::new(params.qual_t);
     let mut parser = Sequential::new();
     for input in params.inputs {
-        parser.parse(input, &mut data)?;
+        parser.with_blocksize(params.blocksize, input, &mut data)?;
     }
 
     println!("{}", data);
