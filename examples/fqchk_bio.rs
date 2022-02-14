@@ -1,5 +1,5 @@
 /* crate use */
-use clap::Clap;
+use clap::Parser;
 
 mod fqchk_utils;
 use fqchk_utils::{Command, Data, PosInfo};

@@ -1,5 +1,5 @@
 /* crate use */
-use clap::Clap;
+use clap::Parser;
 
 use needletail::FastxReader;
 

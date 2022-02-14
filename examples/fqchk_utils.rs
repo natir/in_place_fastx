@@ -16,31 +16,24 @@ lazy_static::lazy_static! {
     };
 }
 
-#[derive(clap::Clap, Debug)]
+/// A clone of seqtk fqchk
+#[derive(clap::Parser, Debug)]
 #[clap(
     name = "fqchk",
     version = "0.1",
-    author = "Pierre Marijon <pierre.marijon-ext@aphp.fr>",
-    about = "A clone of seqtk fqchk"
+    author = "Pierre Marijon <pierre.marijon-ext@aphp.fr>"
 )]
 pub struct Command {
-    #[clap(short = 'i', long = "input", about = "Fastq input")]
+    /// Fastq input
+    #[clap(short = 'i', long = "input")]
     pub inputs: Vec<String>,
 
-    #[clap(
-        short = 'q',
-        long = "quality-threshold",
-        about = "Quality threshold",
-        default_value = "20"
-    )]
+    /// Quality threshold
+    #[clap(short = 'q', long = "quality-threshold", default_value = "20")]
     pub qual_t: u8,
 
-    #[clap(
-        short = 'b',
-        long = "blocksize",
-        about = "Control default blocksize",
-        default_value = "16384"
-    )]
+    /// Control default blocksize
+    #[clap(short = 'b', long = "blocksize", default_value = "16384")]
     pub blocksize: u64,
 }
 
@@ -161,3 +154,5 @@ impl std::fmt::Display for Data {
         Ok(())
     }
 }
+
+fn main() -> () {}
