@@ -10,7 +10,7 @@ use crate::error;
 impl_producer!(Producer, |block: &[u8]| {
     let mut end = block.len();
 
-    for _ in 0..4 {
+    for _ in 0..5 {
         end = block[..end]
             .rfind_byte(b'\n')
             .ok_or(error::Error::NoNewLineInBlock)?;
