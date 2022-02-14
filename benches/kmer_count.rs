@@ -7,7 +7,6 @@ use rand::Rng;
 use rand::SeedableRng;
 
 /* project use */
-use in_place_fastx;
 use rayon::iter::ParallelBridge;
 use rayon::iter::ParallelIterator;
 
@@ -96,8 +95,8 @@ fn in_place_fastx_kmer_count_parallel<P>(
 where
     P: AsRef<std::path::Path>,
 {
-    let mut counter = Counter::new();
-    let mut parser = ParserParallel::new();
+    let counter = Counter::new();
+    let parser = ParserParallel::new();
 
     parser.with_blocksize(block_length, path, &counter).unwrap();
 

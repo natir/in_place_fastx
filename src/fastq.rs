@@ -1,7 +1,7 @@
 //! Struct that extract part of file (called block) and read it as fastq file.
 
-/* crate use */
 use bstr::ByteSlice;
+/* crate use */
 
 /* project use */
 use crate::block;

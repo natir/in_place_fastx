@@ -33,7 +33,7 @@ pub struct Command {
     pub qual_t: u8,
 
     /// Control default blocksize
-    #[clap(short = 'b', long = "blocksize", default_value = "16384")]
+    #[clap(short = 'b', long = "blocksize", default_value = "2097152")]
     pub blocksize: u64,
 }
 

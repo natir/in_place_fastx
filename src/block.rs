@@ -6,13 +6,13 @@
 /// Block reperesent a section of file memory mapped in file
 #[derive(Debug)]
 pub struct Block {
-    mem: memmap::Mmap,
+    mem: memmap2::Mmap,
     end: usize,
 }
 
 impl Block {
     /// Create a new Block
-    pub fn new(end: usize, mem: memmap::Mmap) -> Self {
+    pub fn new(end: usize, mem: memmap2::Mmap) -> Self {
         Self { mem, end }
     }
 
@@ -78,7 +78,7 @@ macro_rules! impl_producer {
                     Ok(None)
                 } else if self.offset() + self.blocksize() >= self.file_length() {
                     let block = unsafe {
-                        memmap::MmapOptions::new()
+                        memmap2::MmapOptions::new()
                             .offset(self.offset())
                             .len((self.file_length() - self.offset()) as usize)
                             .map(self.file())
@@ -90,7 +90,7 @@ macro_rules! impl_producer {
                     Ok(Some(block::Block::new(block.len(), block)))
                 } else {
                     let block = unsafe {
-                        memmap::MmapOptions::new()
+                        memmap2::MmapOptions::new()
                             .offset(self.offset())
                             .len(self.blocksize() as usize)
                             .map(self.file())
@@ -192,8 +192,7 @@ macro_rules! impl_reader {
                 block: &block::Block,
                 offset: &usize,
             ) -> error::Result<std::ops::Range<usize>> {
-                let next = block.data()[*offset..]
-                    .find_byte(b'\n')
+                let next = memchr::memchr(b'\n', &block.data()[*offset..])
                     .ok_or(error::Error::PartialRecord)?;
                 let range = *offset..*offset + next;
 
@@ -212,7 +211,7 @@ mod tests {
         let file = crate::tests::generate_fastq(42, 1_000, 50);
 
         let data = unsafe {
-            memmap::MmapOptions::new()
+            memmap2::MmapOptions::new()
                 .offset(0)
                 .len(500)
                 .map(file.as_file())

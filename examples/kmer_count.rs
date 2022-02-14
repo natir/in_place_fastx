@@ -2,24 +2,25 @@ use in_place_fastx;
 
 const K: usize = 13;
 const KMER_SPACE: usize = 4_usize.pow(K as u32);
-const BLOCK_SIZE: u64 = 2u64.pow(16);
+const BLOCK_SIZE: u64 = 2u64.pow(18);
 
 in_place_fastx::fastq_sequential!(
     Parser,
-    std::collections::HashMap<u64, u64>,
-    |record: in_place_fastx::block::Record, counter: &mut std::collections::HashMap<u64, u64>| {
-    if record.sequence.len() < K {
-        return ;
-    }
+    Vec<u8>,
+    |record: in_place_fastx::block::Record, counter: &mut Vec<u8>| {
+        if record.sequence.len() < K {
+            return;
+        }
 
-    for kmer in cocktail::tokenizer::Tokenizer::new(record.sequence, K as u8) {
-        *counter.entry(kmer).or_insert(0) += 1;
-    }
+        for kmer in cocktail::tokenizer::Canonical::new(record.sequence, K as u8) {
+            counter[(kmer as usize) >> 1] += 1;
+        }
     }
 );
 
 fn main() -> in_place_fastx::error::Result<()> {
-    let mut counter = std::collections::HashMap::with_capacity(KMER_SPACE);
+    let mut counter: Vec<u8> = vec![0; cocktail::kmer::get_hash_space_size(K as u8) as usize];
+
     let mut parser = Parser::new();
 
     let mut args = std::env::args();
@@ -28,8 +29,12 @@ fn main() -> in_place_fastx::error::Result<()> {
         parser.with_blocksize(BLOCK_SIZE, input, &mut counter)?;
     }
 
-    for (kmer, count) in counter.iter() {
-        println!("{},{}", cocktail::kmer::kmer2seq(*kmer, K as u8), count);
+    for (kmer, count) in counter.iter().enumerate() {
+        println!(
+            "{},{}",
+            cocktail::kmer::kmer2seq(kmer as u64, K as u8),
+            count
+        );
     }
 
     Ok(())
