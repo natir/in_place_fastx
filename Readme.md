@@ -5,6 +5,9 @@
 [![Documentation](https://github.com/natir/in_place_fastx/workflows/Documentation/badge.svg)](https://natir.github.io/in_place_fastx/in_place_fastx)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/natir/in_place_fastx/blob/master/LICENSE)
 
+
+**This repository is no longer active, instead use [biommap](https://github.com/natir/biommap)**
+
 # FastMap
 
 A fastq parser based on memory mapping.
